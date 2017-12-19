@@ -6,7 +6,7 @@ use Core\Model\Model;
 
 class User extends Model {
 
-    private $id = 0;
+    protected $id = 0;
     private $token = '';
 
     public function getID(){

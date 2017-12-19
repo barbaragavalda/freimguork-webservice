@@ -102,8 +102,8 @@ abstract class WebserviceController extends Controller {
      * @return bool|int
      */
     private function checkToken(){
-        //$token = $_REQUEST['token'];
-        $token = 'DeFaUlTtOkEn';
+        $headers = getallheaders();
+        $token = $headers['Authorization'];
 
         $correctToken = false;
         if( $token != '' ){
