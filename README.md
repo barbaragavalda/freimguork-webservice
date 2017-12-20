@@ -10,8 +10,14 @@ Webservice module for AppAqui projects.
     ```
     $config = array(
         'webservice' => array(
+        	'app_name'                  => 'Your app name',
+        	'webservice_web'            => 'http://url-to-webservice.com',
+        	'google_play'               => 'http://url-to-google-play.com',
+        	'app_store'                 => 'http://url-to-app-store.com',
+        	'url_scheme'                => 'your-url-scheme://',
+        
             'default_token'     => 'DeFaUlTtOkEn',
-            'public_entities'   => array('signin', 'signup')
+            'public_entities'   => array('signin', 'signup', 'forgot')
         )
     );
     ```

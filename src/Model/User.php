@@ -6,8 +6,20 @@ use Core\Model\Model;
 
 class User extends Model {
 
+    /**
+     * @var int     user identifier
+     */
     protected $id = 0;
-    private $token = '';
+
+    /**
+     * @var string  user token
+     */
+    protected $token = '';
+
+    /**
+     * @return array    user info
+     */
+    protected $info = array();
 
     public function getID(){
         return $this->id;
@@ -15,6 +27,10 @@ class User extends Model {
 
     public function getToken(){
         return $this->token;
+    }
+
+    public function getInfo(){
+        return $this->info;
     }
 
     /**
@@ -42,8 +58,8 @@ class User extends Model {
      */
     protected function load($user){
         if( count($user) ){
-            $info = $user[0];
-            $this->id = $info['id_user'];
+            $this->info = $user[0];
+            $this->id = $this->info['id_user'];
             return $this->id;
         }
         return false;

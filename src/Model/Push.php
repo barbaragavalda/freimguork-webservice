@@ -84,9 +84,9 @@ class Push extends Model {
      */
     public function getNotifications(){
         $sql = '
-            SELECT an.code, un.id_notification
+            SELECT an.code, an.id_appacman_notification
             FROM appacman_notification AS an
-            LEFT JOIN user_appacman_notification AS uan ON an.id_notification = uan.id_notification AND uan.id_user = :id_user
+            LEFT JOIN user_appacman_notification AS uan ON an.id_appacman_notification = uan.id_appacman_notification AND uan.id_user = :id_user
         ';
         $params = array(
             'id_user' => array('value'=>$this->id_user, 'type'=>\PDO::PARAM_INT),
@@ -95,11 +95,11 @@ class Push extends Model {
 
         $config = array();
         if( count($notifications) ){
-            foreach ($notifications as $noti){
-                if( $noti['id_notification'] ){
-                    $config[ $noti['code'] ] = true;
+            foreach ($notifications as $notification){
+                if( $notification['id_appacman_notification'] ){
+                    $config[ $notification['code'] ] = true;
                 }else{
-                    $config[ $noti['code'] ] = false;
+                    $config[ $notification['code'] ] = false;
                 }
             }
         }
@@ -148,7 +148,7 @@ class Push extends Model {
             DELETE FROM user_appacman_notification
             WHERE id_user = :id_user AND
                 id_appacman_notification = (
-                    SELECT id_appacman_notification FROM user_appacman_notification WHERE code = :code
+                    SELECT id_appacman_notification FROM appacman_notification WHERE code = :code
                 )
         ';
         $params = array(
