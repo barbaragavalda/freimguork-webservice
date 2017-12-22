@@ -7,11 +7,6 @@ use Core\Model\Model;
 class User extends Model {
 
     /**
-     * @var int     user identifier
-     */
-    protected $id = 0;
-
-    /**
      * @var string  user token
      */
     protected $token = '';
@@ -20,10 +15,6 @@ class User extends Model {
      * @return array    user info
      */
     protected $info = array();
-
-    public function getID(){
-        return $this->id;
-    }
 
     public function getToken(){
         return $this->token;
