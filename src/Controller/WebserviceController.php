@@ -101,7 +101,7 @@ abstract class WebserviceController extends Controller {
      * check if user us allowed to access to this entity
      * @return bool|int
      */
-    private function checkToken(){
+    protected function checkToken(){
         $headers = getallheaders();
         $token = $headers['Authorization'];
 
