@@ -13,11 +13,6 @@ class Push extends Model {
     private $urlScheme = '';
 
     /**
-     * @var string  uuid of device
-     */
-    private $id = '';
-
-    /**
      * @var int  user id
      */
     protected $id_user = 0;
