@@ -3,30 +3,17 @@
 namespace Webservice\Model;
 
 use Core\Model\Model;
-use Core\Utils\Config;
 
 class Push extends Model {
-
-    /**
-     * @var string  deep linking protocol
-     */
-    private $urlScheme = '';
 
     /**
      * @var int  user id
      */
     protected $id_user = 0;
 
-    public function __construct(){
+    public function __construct($id){
         parent::__construct();
 
-        // url scheme
-        $config = Config::getInstance();
-        $webserviceConfig = $config->get('webservice');
-        $this->urlScheme = $webserviceConfig['url_scheme'];
-    }
-
-    public function setID($id){
         $this->id = $id;
     }
 
@@ -36,13 +23,18 @@ class Push extends Model {
 
     /**
      * register device
-     * @param $token        string. Device token
-     * @param $platform     string. Device platform (ios, android,....)
-     * @param $model        string. Device model
-     * @param $os_version   string. Device OS version
-     * @param $app_version  string. Device app version
+     * @return string|bool error
      */
-    public function register($token, $platform, $model, $os_version, $app_version){
+    public function register(){
+        $token = $_POST['push_token'];
+        if( empty($token) ){
+            return gettext('Debes indicar el token del dispositivo para poder recibir notificaciones push.');
+        }
+        $platform = $_POST['platform'];
+        $model = $_POST['model'];
+        $os_version = $_POST['os_version'];
+        $app_version = $_POST['app_version'];
+
         $sql = '
             REPLACE INTO appacman_push (uuid, token, platform, model, os_version, app_version, id_user)
             VALUES (:uuid, :token, :platform, :model, :os_version, :app_version, :id_user)
@@ -57,10 +49,16 @@ class Push extends Model {
             'id_user'       => array('value'=>$this->id_user,   'type'=>\PDO::PARAM_INT)
         );
         $this->mysql->query($sql, $params);
+
+        if( $this->mysql->getState() ){
+            return false;
+        }
+        return gettext('Error en el servidor. Por favor, inténtalo más tarde.');
     }
 
     /**
      * delete device
+     * @return string|bool error
      */
     public function delete(){
         $sql = '
@@ -71,6 +69,11 @@ class Push extends Model {
             'uuid' => array('value'=>$this->id, 'type'=>\PDO::PARAM_STR)
         );
         $this->mysql->query($sql, $params);
+
+        if( $this->mysql->getState() ){
+            return false;
+        }
+        return gettext('Error en el servidor. Por favor, inténtalo más tarde.');
     }
 
     /**
@@ -152,32 +155,5 @@ class Push extends Model {
         );
         $this->mysql->query($sql, $params);
     }
-
-    /*********************************************
-     * SEND PUSH
-     ********************************************
-    private function send($platforms, $message, $urlScheme = ''){
-        $android = $ios = array();
-        foreach($platforms as $platform){
-            $tokens = explode(',', $platform['tokens']);
-            switch( $platform['name'] ){
-                case 'android': $android = $tokens; break;
-                case 'ios':     $ios = $tokens;     break;
-            }
-        }
-
-        if( count($android) ){
-            $pushAndroid = new PushAndroid($message, $android, $urlScheme);
-            $pushAndroid->send();
-            $pushAndroid->close();
-        }
-
-        if( count($ios) ){
-            $pushiOS = new PushiOS($message, $ios, $urlScheme);
-            $pushiOS->send();
-            $pushiOS->close();
-        }
-
-    }*/
 
 }
