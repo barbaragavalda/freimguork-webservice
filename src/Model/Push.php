@@ -11,7 +11,7 @@ class Push extends Model {
      */
     protected $id_user = 0;
 
-    public function __construct($id){
+    public function __construct($id = null){
         parent::__construct();
 
         $this->id = $id;
@@ -82,7 +82,7 @@ class Push extends Model {
      */
     public function getNotifications(){
         $sql = '
-            SELECT an.code, an.id_appacman_notification
+            SELECT an.code, uan.id_appacman_notification
             FROM appacman_notification AS an
             LEFT JOIN user_appacman_notification AS uan ON an.id_appacman_notification = uan.id_appacman_notification AND uan.id_user = :id_user
         ';
