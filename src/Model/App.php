@@ -10,7 +10,7 @@ class App extends Model {
         $sql = '
             SELECT `value`
             FROM appacman_app_config
-            WHERE id_app_config = 3
+            WHERE `name` = "MAINTENANCE"
         ';
         $maintenance = $this->mysql->query($sql);
 
