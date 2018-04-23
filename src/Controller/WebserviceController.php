@@ -37,6 +37,10 @@ abstract class WebserviceController extends Controller {
         parent::__construct();
 
         $this->method = $_SERVER['REQUEST_METHOD'];
+        $headers = getallheaders();
+        if( array_key_exists('X-Http-Method-Override', $headers) ){
+            $this->method = $headers['X-Http-Method-Override'];
+        }
         $this->parseParams();
     }
 
@@ -45,6 +49,7 @@ abstract class WebserviceController extends Controller {
      * the result is always a JSON object
      */
     public function build(){
+        $error = false;
         $this->removeInfo();
 
         $this->app = new App();
@@ -65,10 +70,10 @@ abstract class WebserviceController extends Controller {
      * load request for delete petitions
      */
     private function parseParams() {
-        if( $this->method == self::DELETE ){
+        /*if( $this->method == self::DELETE ){
             parse_str(file_get_contents('php://input'), $this->params);
             $_REQUEST = $this->params + $_REQUEST;
-        }
+        }*/
     }
 
     /**
@@ -108,15 +113,16 @@ abstract class WebserviceController extends Controller {
         $correctToken = false;
         if( $token != '' ){
             $auxUser = new User();
-            if( $auxUser->loadWithToken($token) ){
+            $config = Config::getInstance();
+            $webserviceConfig = $config->get('webservice');
+            $defaultToken = $webserviceConfig['default_token'];
+
+            if( $token != $defaultToken && $auxUser->loadWithToken($token) ){
                 // petitions with token (where users must be logged in)
                 $this->user = $auxUser;
                 $correctToken = true;
             }else{
                 // petitions without token
-                $config = Config::getInstance();
-                $webserviceConfig = $config->get('webservice');
-                $defaultToken = $webserviceConfig['default_token'];
                 $entitiesWithoutToken = $webserviceConfig['entities_without_token'];
                 if( !$correctToken && in_array($this->parts[0], $entitiesWithoutToken) ){
                     if( $defaultToken == $token ){
