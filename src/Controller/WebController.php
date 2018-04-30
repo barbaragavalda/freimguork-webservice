@@ -28,6 +28,7 @@ abstract class WebController extends Controller {
         $this->assign('open_app', $this->openAppDeepLink);
         $this->assign('google_play', $this->googlePlay);
         $this->assign('app_store', $this->appStore);
+        $this->assign('canonical', 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REDIRECT_URL']);
 
         $this->run();
     }
