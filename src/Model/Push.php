@@ -36,7 +36,7 @@ class Push extends Model {
         $app_version = $_POST['app_version'];
 
         $sql = '
-            REPLACE INTO appacman_push (uuid, token, platform, model, os_version, app_version, id_user)
+            REPLACE INTO appacman_push_device (uuid, token, platform, model, os_version, app_version, id_user)
             VALUES (:uuid, :token, :platform, :model, :os_version, :app_version, :id_user)
         ';
         $params = array(
@@ -62,7 +62,7 @@ class Push extends Model {
      */
     public function delete(){
         $sql = '
-            DELETE FROM appacman_push
+            DELETE FROM appacman_push_device
             WHERE uuid = :uuid
         ';
         $params = array(
