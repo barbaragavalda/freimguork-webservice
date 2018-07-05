@@ -108,7 +108,10 @@ abstract class WebserviceController extends Controller {
      */
     protected function checkToken(){
         $headers = getallheaders();
-        $token = $headers['Authorization'];
+        $token = false;
+        if( array_key_exists('Authorization', $headers) ) $token = $headers['Authorization'];
+        // duplicate Authorization just in case server does not allow normal Authorization
+        if( array_key_exists('Authorization-Alias', $headers) ) $token = $headers['Authorization-Alias'];
 
         $correctToken = false;
         if( $token != '' ){
