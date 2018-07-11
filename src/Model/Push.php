@@ -34,11 +34,6 @@ class Push extends Model {
         $model = $_POST['model'];
         $os_version = $_POST['os_version'];
         $app_version = $_POST['app_version'];
-
-        $sql = '
-            REPLACE INTO appacman_push_device (uuid, token, platform, model, os_version, app_version, id_user)
-            VALUES (:uuid, :token, :platform, :model, :os_version, :app_version, :id_user)
-        ';
         $params = array(
             'uuid'          => array('value'=>$this->id,        'type'=>\PDO::PARAM_STR),
             'token'         => array('value'=>$token,           'type'=>\PDO::PARAM_STR),
@@ -48,6 +43,17 @@ class Push extends Model {
             'app_version'   => array('value'=>$app_version,     'type'=>\PDO::PARAM_STR),
             'id_user'       => array('value'=>$this->id_user,   'type'=>\PDO::PARAM_INT)
         );
+
+        $extraFields = '';
+        if( isset($_POST['language']) ){
+            $extraFields = ', language';
+            $extraValues = ', :language';
+            $params['language'] = array('value' => $_POST['language'], 'type' => \PDO::PARAM_STR);
+        }
+        $sql = '
+            REPLACE INTO appacman_push_device (uuid, token, platform, model, os_version, app_version, id_user' . $extraFields . ')
+            VALUES (:uuid, :token, :platform, :model, :os_version, :app_version, :id_user' . $extraValues . ')
+        ';
         $this->mysql->query($sql, $params);
 
         if( $this->mysql->getState() ){

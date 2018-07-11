@@ -26,7 +26,7 @@ class App extends Model {
         $sql = '
             SELECT *
             FROM appacman_app_config
-            WHERE `name` = "VERSION" AND `platform` = :platform AND `value` <> :app_version
+            WHERE `name` = "VERSION" AND `platform` = :platform AND `value` > :app_version
         ';
         $params = array(
             'platform'     => array('value'=>mb_strtolower($platform,'UTF-8'),  'type'=>\PDO::PARAM_STR),
