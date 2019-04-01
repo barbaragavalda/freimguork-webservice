@@ -44,7 +44,7 @@ class Push extends Model {
             'id_user'       => array('value'=>$this->id_user,   'type'=>\PDO::PARAM_INT)
         );
 
-        $extraFields = '';
+        $extraFields = $extraValues = '';
         if( isset($_POST['language']) ){
             $extraFields = ', language';
             $extraValues = ', :language';
