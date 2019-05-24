@@ -3,6 +3,7 @@
 namespace Webservice\Model;
 
 use Core\Model\Model;
+use Core\Utils\Config;
 
 class App extends Model {
 
@@ -38,6 +39,24 @@ class App extends Model {
             return true;
         }
         return false;
+    }
+
+    public function environment(){
+        $platform = strtolower( $_GET['app_platform'] );
+        $version = $_GET['app_version'];
+
+        $config = Config::getInstance();
+        $configWS = $config->get('webservice');
+        if( count($configWS) ){
+            if( $platform && $version ){
+                if( $version > $configWS['prod_version']['ios'] ){
+                    return $configWS['environments']['pre'];
+                }
+            }
+            return $configWS['environments']['prod'];
+        }
+
+        return null;
     }
 
 }
