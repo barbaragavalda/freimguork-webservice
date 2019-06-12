@@ -53,7 +53,9 @@ abstract class WebserviceController extends Controller {
         $this->removeInfo();
 
         $this->app = new App();
-        if( !$this->checkMaintenance() && !$this->checkAppVersion() ){
+        if( $this->parts[0] == 'environment' ){
+            $this->run();
+        }else if( !$this->checkMaintenance() && !$this->checkAppVersion() ){
             $error = $this->checkToken();
 
             if( $error === false ){
