@@ -88,26 +88,28 @@ class Push extends Model {
      */
     public function getNotifications(){
         $sql = '
-            SELECT an.code, uan.id_appacman_notification
+            SELECT anl.name, an.id_appacman_notification AS id, uan.id_appacman_notification AS is_on
             FROM appacman_notification AS an
+            INNER JOIN appacman_notification_lang AS anl ON an.id_appacman_notification = anl.id_appacman_notification AND anl.id_appacman_lang = :lang
             LEFT JOIN user_appacman_notification AS uan ON an.id_appacman_notification = uan.id_appacman_notification AND uan.id_user = :id_user
         ';
         $params = array(
-            'id_user' => array('value'=>$this->id_user, 'type'=>\PDO::PARAM_INT),
+            'lang'      => array('value'=>$this->langID,    'type'=>\PDO::PARAM_INT),
+            'id_user'   => array('value'=>$this->id_user,   'type'=>\PDO::PARAM_INT),
         );
         $notifications = $this->mysql->query($sql, $params);
 
-        $config = array();
         if( count($notifications) ){
-            foreach ($notifications as $notification){
-                if( $notification['id_appacman_notification'] ){
-                    $config[ $notification['code'] ] = true;
+            foreach ($notifications as &$notification){
+                if( $notification['is_on'] ){
+                    $notification['on'] = true;
                 }else{
-                    $config[ $notification['code'] ] = false;
+                    $notification['on'] = false;
                 }
             }
+            return $notifications;
         }
-        return $config;
+        return array();
     }
 
     /**
@@ -115,49 +117,45 @@ class Push extends Model {
      * @param $notifications
      */
     public function modifyNotifications($notifications){
-        foreach( $notifications as $code => $activated ){
-            if( $activated == "true" ){
-                $this->addNotification($code);
+        foreach( $notifications as $id => $activated ){
+            if( $activated ) {
+                $this->addNotification($id);
             }else{
-                $this->removeNotification($code);
+                $this->removeNotification($id);
             }
         }
     }
 
     /**
      * activate notification
-     * @param $code
+     * @param $id
      */
-    private function addNotification($code){
+    private function addNotification($id){
         $sql = '
             INSERT INTO user_appacman_notification
             SET id_user = :id_user,
-                id_appacman_notification = (
-                    SELECT id_appacman_notification FROM appacman_notification WHERE code = :code
-                )
+                id_appacman_notification = :id
         ';
         $params = array(
             'id_user'   => array('value'=>$this->id_user,   'type'=>\PDO::PARAM_INT),
-            'code'      => array('value'=>$code,            'type'=>\PDO::PARAM_STR)
+            'id'        => array('value'=>$id,              'type'=>\PDO::PARAM_INT)
         );
         $this->mysql->query($sql, $params);
     }
 
     /**
      * remove notification
-     * @param $code
+     * @param $id
      */
-    private function removeNotification($code){
+    private function removeNotification($id){
         $sql = '
             DELETE FROM user_appacman_notification
             WHERE id_user = :id_user AND
-                id_appacman_notification = (
-                    SELECT id_appacman_notification FROM appacman_notification WHERE code = :code
-                )
+                id_appacman_notification = :id
         ';
         $params = array(
             'id_user'   => array('value'=>$this->id_user,   'type'=>\PDO::PARAM_INT),
-            'code'      => array('value'=>$code,            'type'=>\PDO::PARAM_STR)
+            'id'        => array('value'=>$id,              'type'=>\PDO::PARAM_INT)
         );
         $this->mysql->query($sql, $params);
     }
