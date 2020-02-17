@@ -1,14 +1,14 @@
 {
     "name": "appaqui/freimguork-webservice",
-    "description": "Webservice module for AppAqui projects",
+    "description": "Webservice module for Freimgüork projects",
     "authors": [
         {
             "name": "Barbara Gavalda",
-            "email": "bgavalda@appaqui.com"
+            "email": "bgb@optisistem.com"
         },
         {
             "name": "Toni Palanques",
-            "email": "tpalanques@appaqui.com"
+            "email": "tpv@optisistem.com"
         }
     ],
     "repositories": [
