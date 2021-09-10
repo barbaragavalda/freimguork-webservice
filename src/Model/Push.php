@@ -129,8 +129,9 @@ class Push extends Model {
     /**
      * activate notification
      * @param $id
+     * @return boolean success
      */
-    private function addNotification($id){
+    public function addNotification($id){
         $sql = '
             INSERT INTO user_appacman_notification
             SET id_user = :id_user,
@@ -141,13 +142,15 @@ class Push extends Model {
             'id'        => array('value'=>$id,              'type'=>\PDO::PARAM_INT)
         );
         $this->mysql->query($sql, $params);
+        return $this->mysql->getState();
     }
 
     /**
      * remove notification
      * @param $id
+     * @return boolean success
      */
-    private function removeNotification($id){
+    public function removeNotification($id){
         $sql = '
             DELETE FROM user_appacman_notification
             WHERE id_user = :id_user AND
@@ -158,6 +161,7 @@ class Push extends Model {
             'id'        => array('value'=>$id,              'type'=>\PDO::PARAM_INT)
         );
         $this->mysql->query($sql, $params);
+        return $this->mysql->getState();
     }
 
 }

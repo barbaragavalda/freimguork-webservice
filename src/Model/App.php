@@ -42,8 +42,15 @@ class App extends Model {
     }
 
     public function environment(){
-        $platform = strtolower( $_GET['app_platform'] );
-        $version = $_GET['app_version'];
+        $platform = null;
+        if( isset($_GET['app_platform']) ){
+            $platform = strtolower( $_GET['app_platform'] );
+        }
+
+        $version = null;
+        if( isset($_GET['app_version']) ){
+            $version = floatval($_GET['app_version']);
+        }
 
         $config = Config::getInstance();
         $configWS = $config->get('webservice');
