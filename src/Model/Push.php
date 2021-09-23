@@ -112,6 +112,24 @@ class Push extends Model {
         return array();
     }
 
+    public function has($type){
+        $sql = '
+            SELECT *
+            FROM user_appacman_notification
+            WHERE id_user = :id_user AND id_appacman_notification = :id
+        ';
+        $params = array(
+            'id_user'   => array('value'=>$this->id_user,   'type'=>\PDO::PARAM_INT),
+            'id'        => array('value'=>$type,            'type'=>\PDO::PARAM_INT)
+        );
+        $notification = $this->mysql->query($sql, $params);
+
+        if( count($notification) ){
+            return true;
+        }
+        return false;
+    }
+
     /**
      * save notifications configuration
      * @param $notifications
