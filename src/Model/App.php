@@ -24,19 +24,20 @@ class App extends Model {
     }
 
     public function shouldUpdate($platform, $appVersion){
-        $sql = '
+        $sql    = '
             SELECT *
             FROM appacman_app_config
-            WHERE `name` = "VERSION" AND `platform` = :platform AND `value` > :app_version
+            WHERE `name` = "VERSION" AND `platform` = :platform
         ';
         $params = array(
-            'platform'     => array('value'=>mb_strtolower($platform,'UTF-8'),  'type'=>\PDO::PARAM_STR),
-            'app_version'  => array('value'=>$appVersion,                       'type'=>\PDO::PARAM_STR)
+            'platform' => array('value' => mb_strtolower($platform, 'UTF-8'), 'type' => \PDO::PARAM_STR)
         );
-        $app = $this->mysql->query($sql, $params);
+        $app    = $this->mysql->query($sql, $params);
 
-        if( count($app) ){
-            return true;
+        if (count($app)) {
+            $appVersion = floatval($appVersion);
+            $dbVersion = floatval($app[0]['value']);
+            return $dbVersion > $appVersion;
         }
         return false;
     }
