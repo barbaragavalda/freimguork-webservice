@@ -56,8 +56,8 @@ class App extends Model {
         $config = Config::getInstance();
         $configWS = $config->get('webservice');
         if( count($configWS) ){
-            if( $platform && $version ){
-                if( $version > $configWS['prod_version']['ios'] ){
+            if( $platform != null && $version != null ){
+                if( $version > $configWS['prod_version'][$platform] ){
                     return $configWS['environments']['pre'];
                 }
             }
