@@ -53,7 +53,7 @@ abstract class WebserviceController extends Controller {
         $this->removeInfo();
 
         $this->app = new App();
-        if( $this->parts[0] == 'environment' ){
+        if( count($this->parts) && $this->parts[0] == 'environment' ){
             $this->run();
         }else if( !$this->checkMaintenance() && !$this->checkAppVersion() ){
             $error = $this->checkToken();
@@ -129,7 +129,7 @@ abstract class WebserviceController extends Controller {
             }else{
                 // petitions without token
                 $entitiesWithoutToken = $webserviceConfig['entities_without_token'];
-                if( !$correctToken && in_array($this->parts[0], $entitiesWithoutToken) ){
+                if( !$correctToken && count($this->parts) && in_array($this->parts[0], $entitiesWithoutToken) ){
                     if( $defaultToken == $token ){
                         $correctToken = true;
                     }
