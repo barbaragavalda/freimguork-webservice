@@ -3,6 +3,7 @@
 namespace Webservice\Model;
 
 use Core\Model\Model;
+use Core\Model\Utils\DateUtils;
 
 class Push extends Model
 {
@@ -91,12 +92,13 @@ class Push extends Model
 
     private function update($token, $platform, $model, $os_version, $app_version, $language)
     {
-        $params = array(
+        $extraFields = array('last_connection = :now');
+        $params      = array(
             'uuid'    => array('value' => $this->id, 'type' => \PDO::PARAM_STR),
-            'id_user' => array('value' => $this->id_user, 'type' => \PDO::PARAM_INT)
+            'id_user' => array('value' => $this->id_user, 'type' => \PDO::PARAM_INT),
+            'now'     => array('value' => date(DateUtils::FORMAT_TIMESTAMP_DB), 'type' => \PDO::PARAM_STR)
         );
 
-        $extraFields = array();
         if (!empty($token)) {
             $extraFields[]   = 'token = :token';
             $params['token'] = array('value' => $token, 'type' => \PDO::PARAM_STR);
