@@ -1,29 +1,32 @@
 {
-    "name": "appaqui/freimguork-webservice",
-    "description": "Webservice module for Freimgüork projects",
-    "authors": [
-        {
-            "name": "Barbara Gavalda",
-            "email": "bgb@optisistem.com"
-        },
-        {
-            "name": "Toni Palanques",
-            "email": "tpv@optisistem.com"
-        }
-    ],
-    "repositories": [
-        {
-            "type": "vcs",
-            "url":  "https://bgavalda@bitbucket.org/appaqui/freimguork-core.git"
-        }
-    ],
-    "require": {
-        "appaqui/freimguork-core": "dev-master"
+  "name": "optisistem/freimguork-webservice",
+  "description": "Webservice module for Freimgüork projects",
+  "authors": [
+    {
+      "name": "Barbara Gavalda",
+      "email": "bgb@optisistem.com"
     },
-    "autoload": {
-        "psr-4": {
-            "Webservice\\": "src/"
-        }
-    },
-    "minimum-stability": "dev"
+    {
+      "name": "Toni Palanques",
+      "email": "tpv@optisistem.com"
+    }
+  ],
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "git@bitbucket.org:optisistem/freimguork-core.git"
+    }
+  ],
+  "require": {
+    "php": "^8.5",
+    "ext-gettext": "*",
+    "ext-pdo": "*",
+    "optisistem/freimguork-core": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "Webservice\\": "src/"
+    }
+  },
+  "minimum-stability": "dev"
 }

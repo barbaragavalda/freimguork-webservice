@@ -7,84 +7,69 @@ use Core\Utils\Config;
 use Webservice\Model\App;
 use Webservice\Model\User;
 
-abstract class WebserviceController extends Controller {
+abstract class WebserviceController extends Controller
+{
 
-    const GET       = 'GET';
-    const POST      = 'POST';
-    const DELETE    = 'DELETE';
+    const string GET    = 'GET';
+    const string POST   = 'POST';
+    const string DELETE = 'DELETE';
 
-    /**
-     * @var string      method used in this entity
-     */
-    protected $method;
+    protected string $method;
 
-    /**
-     * @var \Webservice\Model\App   app configuration
-     */
-    private $app = null;
+    private ?App $app = null;
 
-    /**
-     * @var null \Webservice\Model\User   app user
-     */
-    protected $user = null;
+    protected ?User $user = null;
 
-    /**
-     * @var bool|string     error
-     */
-    protected $error = false;
+    protected bool|string $error = false;
 
-    public function __construct(){
+    public function __construct()
+    {
         parent::__construct();
 
         $this->method = $_SERVER['REQUEST_METHOD'];
-        $headers = getallheaders();
-        if( array_key_exists('X-Http-Method-Override', $headers) ){
+        $headers      = getallheaders();
+        if (array_key_exists('X-Http-Method-Override', $headers)) {
             $this->method = $headers['X-Http-Method-Override'];
         }
-        $this->parseParams();
     }
 
     /**
-     * all entities pass through this method
+     * all entities pass through this method,
      * the result is always a JSON object
      */
-    public function build(){
+    public function build(): void
+    {
         $error = false;
         $this->removeInfo();
 
         $this->app = new App();
-        if( count($this->parts) && $this->parts[0] == 'environment' ){
+        if (count($this->parts) && $this->parts[0] == 'environment') {
             $this->run();
-        }else if( !$this->checkMaintenance() && !$this->checkAppVersion() ){
-            $error = $this->checkToken();
+        } else {
+            if (!$this->checkMaintenance() && !$this->checkAppVersion()) {
+                $error = $this->checkToken();
 
-            if( $error === false ){
-                $this->run();
+                if ($error === false) {
+                    $this->run();
+                }
             }
         }
 
-        if( $this->error !== false ) $error = $this->error;
+        if ($this->error !== false) {
+            $error = $this->error;
+        }
         $this->assign('error', $error);
         $this->json();
-    }
-
-    /**
-     * load request for delete petitions
-     */
-    private function parseParams() {
-        /*if( $this->method == self::DELETE ){
-            parse_str(file_get_contents('php://input'), $this->params);
-            $_REQUEST = $this->params + $_REQUEST;
-        }*/
     }
 
     /**
      * is maintenance on?
      * @return bool
      */
-    private function checkMaintenance(){
-        if( $maintenance = $this->app->onMaintenance() ){
-            $this->assign('maintenance', gettext($maintenance));
+    private function checkMaintenance(): bool
+    {
+        if ($maintenance = $this->app->onMaintenance()) {
+            $this->assign('maintenance', _($maintenance));
             return true;
         }
         return false;
@@ -94,9 +79,10 @@ abstract class WebserviceController extends Controller {
      * should update?
      * @return bool
      */
-    private function checkAppVersion(){
-        if( isset($_REQUEST['app_platform']) && isset($_REQUEST['app_version']) ){
-            if( $this->app->shouldUpdate($_REQUEST['app_platform'], $_REQUEST['app_version']) ){
+    private function checkAppVersion(): bool
+    {
+        if (isset($_REQUEST['app_platform']) && isset($_REQUEST['app_version'])) {
+            if ($this->app->shouldUpdate($_REQUEST['app_platform'], $_REQUEST['app_version'])) {
                 $this->assign('should_update', true);
                 return true;
             }
@@ -108,41 +94,46 @@ abstract class WebserviceController extends Controller {
      * check if user us allowed to access to this entity
      * @return bool|int
      */
-    protected function checkToken(){
+    protected function checkToken(): bool|int
+    {
         $headers = getallheaders();
-        $token = false;
-        if( array_key_exists('Authorization', $headers) ) $token = $headers['Authorization'];
+        $token   = false;
+        if (array_key_exists('Authorization', $headers)) {
+            $token = $headers['Authorization'];
+        }
         // duplicate Authorization just in case server does not allow normal Authorization
-        if( array_key_exists('Authorization-Alias', $headers) ) $token = $headers['Authorization-Alias'];
+        if (array_key_exists('Authorization-Alias', $headers)) {
+            $token = $headers['Authorization-Alias'];
+        }
 
         $correctToken = false;
-        if( $token != '' ){
-            $auxUser = new User();
-            $config = Config::getInstance();
+        if ($token != '') {
+            $auxUser          = new User();
+            $config           = Config::getInstance();
             $webserviceConfig = $config->get('webservice');
-            $defaultToken = $webserviceConfig['default_token'];
+            $defaultToken     = $webserviceConfig['default_token'];
 
-            if( $token != $defaultToken && $auxUser->loadWithToken($token) ){
+            if ($token != $defaultToken && $auxUser->loadWithToken($token)) {
                 // petitions with token (where users must be logged in)
-                $this->user = $auxUser;
+                $this->user   = $auxUser;
                 $correctToken = true;
-            }else{
+            } else {
                 // petitions without token
                 $entitiesWithoutToken = $webserviceConfig['entities_without_token'];
-                if( !$correctToken && count($this->parts) && in_array($this->parts[0], $entitiesWithoutToken) ){
-                    if( $defaultToken == $token ){
+                if (count($this->parts) && in_array($this->parts[0], $entitiesWithoutToken)) {
+                    if ($defaultToken == $token) {
                         $correctToken = true;
                     }
                 }
             }
         }
 
-        if( !$correctToken ){
+        if (!$correctToken) {
             return 401;
         }
         return false;
     }
 
-    abstract protected function run();
+    abstract protected function run(): void;
 
 }

@@ -4,39 +4,33 @@ namespace Webservice\Model;
 
 use Core\Model\Model;
 use Core\Model\Utils\DateUtils;
+use PDO;
 
 class Push extends Model
 {
 
-    /**
-     * @var int  user id
-     */
-    protected $id_user = 0;
+    protected int $id_user = 0;
 
-    public function __construct($id = null)
+    public function __construct(?int $id = null)
     {
         parent::__construct();
 
         $this->id = $id;
     }
 
-    public function setIDUser($id_user)
+    public function setIDUser(int $id_user): void
     {
         $this->id_user = $id_user;
     }
 
-    /**
-     * register device
-     * @return string|bool error
-     */
-    public function register()
+    public function register(): string|bool
     {
-        $token       = isset($_POST['push_token']) ? $_POST['push_token'] : '';
+        $token       = $_POST['push_token'] ?? '';
         $platform    = $_POST['platform'];
         $model       = $_POST['model'];
         $os_version  = $_POST['os_version'];
         $app_version = $_POST['app_version'];
-        $language    = isset($_POST['language']) ? $_POST['language'] : '';
+        $language    = $_POST['language'] ?? '';
 
         if ($this->exists()) {
             return $this->update($token, $platform, $model, $os_version, $app_version, $language);
@@ -44,7 +38,7 @@ class Push extends Model
         return $this->push($token, $platform, $model, $os_version, $app_version, $language);
     }
 
-    private function exists()
+    private function exists(): bool
     {
         $sql    = '
             SELECT *
@@ -52,7 +46,7 @@ class Push extends Model
             WHERE uuid = :uuid
         ';
         $params = array(
-            'uuid' => array('value' => $this->id, 'type' => \PDO::PARAM_STR)
+            'uuid' => array('value' => $this->id, 'type' => PDO::PARAM_STR)
         );
         $device = $this->mysql->query($sql, $params);
         if (count($device)) {
@@ -61,22 +55,28 @@ class Push extends Model
         return false;
     }
 
-    private function push($token, $platform, $model, $os_version, $app_version, $language)
-    {
+    private function push(
+        string $token,
+        string $platform,
+        string $model,
+        string $os_version,
+        string $app_version,
+        string $language
+    ): bool|string {
         $params      = array(
-            'uuid'        => array('value' => $this->id, 'type' => \PDO::PARAM_STR),
-            'token'       => array('value' => $token, 'type' => \PDO::PARAM_STR),
-            'platform'    => array('value' => $platform, 'type' => \PDO::PARAM_STR),
-            'model'       => array('value' => $model, 'type' => \PDO::PARAM_STR),
-            'os_version'  => array('value' => $os_version, 'type' => \PDO::PARAM_STR),
-            'app_version' => array('value' => $app_version, 'type' => \PDO::PARAM_STR),
-            'id_user'     => array('value' => $this->id_user, 'type' => \PDO::PARAM_INT)
+            'uuid'        => array('value' => $this->id, 'type' => PDO::PARAM_STR),
+            'token'       => array('value' => $token, 'type' => PDO::PARAM_STR),
+            'platform'    => array('value' => $platform, 'type' => PDO::PARAM_STR),
+            'model'       => array('value' => $model, 'type' => PDO::PARAM_STR),
+            'os_version'  => array('value' => $os_version, 'type' => PDO::PARAM_STR),
+            'app_version' => array('value' => $app_version, 'type' => PDO::PARAM_STR),
+            'id_user'     => array('value' => $this->id_user, 'type' => PDO::PARAM_INT)
         );
         $extraFields = $extraValues = '';
         if (!empty($language)) {
             $extraFields        = ', language';
             $extraValues        = ', :language';
-            $params['language'] = array('value' => $language, 'type' => \PDO::PARAM_STR);
+            $params['language'] = array('value' => $language, 'type' => PDO::PARAM_STR);
         }
         $sql = "
             REPLACE INTO appacman_push_device (uuid, token, platform, model, os_version, app_version, id_user $extraFields)
@@ -90,38 +90,44 @@ class Push extends Model
         return gettext('Error en el servidor. Por favor, inténtalo más tarde.');
     }
 
-    private function update($token, $platform, $model, $os_version, $app_version, $language)
-    {
+    private function update(
+        string $token,
+        string $platform,
+        string $model,
+        string $os_version,
+        string $app_version,
+        string $language
+    ): false|string {
         $extraFields = array('last_connection = :now');
         $params      = array(
-            'uuid'    => array('value' => $this->id, 'type' => \PDO::PARAM_STR),
-            'id_user' => array('value' => $this->id_user, 'type' => \PDO::PARAM_INT),
-            'now'     => array('value' => date(DateUtils::FORMAT_TIMESTAMP_DB), 'type' => \PDO::PARAM_STR)
+            'uuid'    => array('value' => $this->id, 'type' => PDO::PARAM_STR),
+            'id_user' => array('value' => $this->id_user, 'type' => PDO::PARAM_INT),
+            'now'     => array('value' => date(DateUtils::FORMAT_TIMESTAMP_DB), 'type' => PDO::PARAM_STR)
         );
 
         if (!empty($token)) {
             $extraFields[]   = 'token = :token';
-            $params['token'] = array('value' => $token, 'type' => \PDO::PARAM_STR);
+            $params['token'] = array('value' => $token, 'type' => PDO::PARAM_STR);
         }
         if (!empty($platform)) {
             $extraFields[]      = 'platform = :platform';
-            $params['platform'] = array('value' => $platform, 'type' => \PDO::PARAM_STR);
+            $params['platform'] = array('value' => $platform, 'type' => PDO::PARAM_STR);
         }
         if (!empty($model)) {
             $extraFields[]   = 'model = :model';
-            $params['model'] = array('value' => $model, 'type' => \PDO::PARAM_STR);
+            $params['model'] = array('value' => $model, 'type' => PDO::PARAM_STR);
         }
         if (!empty($os_version)) {
             $extraFields[]        = 'os_version = :os_version';
-            $params['os_version'] = array('value' => $os_version, 'type' => \PDO::PARAM_STR);
+            $params['os_version'] = array('value' => $os_version, 'type' => PDO::PARAM_STR);
         }
         if (!empty($app_version)) {
             $extraFields[]         = 'app_version = :app_version';
-            $params['app_version'] = array('value' => $app_version, 'type' => \PDO::PARAM_STR);
+            $params['app_version'] = array('value' => $app_version, 'type' => PDO::PARAM_STR);
         }
         if (!empty($language)) {
             $extraFields[]      = 'language = :language';
-            $params['language'] = array('value' => $language, 'type' => \PDO::PARAM_STR);
+            $params['language'] = array('value' => $language, 'type' => PDO::PARAM_STR);
         }
 
         $fields = '';
@@ -141,18 +147,14 @@ class Push extends Model
         return gettext('Error en el servidor. Por favor, inténtalo más tarde.');
     }
 
-    /**
-     * delete device
-     * @return string|bool error
-     */
-    public function delete()
+    public function delete(): string|bool
     {
         $sql    = '
             DELETE FROM appacman_push_device
             WHERE uuid = :uuid
         ';
         $params = array(
-            'uuid' => array('value' => $this->id, 'type' => \PDO::PARAM_STR)
+            'uuid' => array('value' => $this->id, 'type' => PDO::PARAM_STR)
         );
         $this->mysql->query($sql, $params);
 
@@ -162,11 +164,7 @@ class Push extends Model
         return gettext('Error en el servidor. Por favor, inténtalo más tarde.');
     }
 
-    /**
-     * get notifications configuration
-     * @return array
-     */
-    public function getNotifications()
+    public function getNotifications(): array
     {
         $sql           = '
             SELECT anl.name, an.id_appacman_notification AS id, uan.id_appacman_notification AS is_on
@@ -175,8 +173,8 @@ class Push extends Model
             LEFT JOIN user_appacman_notification AS uan ON an.id_appacman_notification = uan.id_appacman_notification AND uan.id_user = :id_user
         ';
         $params        = array(
-            'lang'    => array('value' => $this->langID, 'type' => \PDO::PARAM_INT),
-            'id_user' => array('value' => $this->id_user, 'type' => \PDO::PARAM_INT),
+            'lang'    => array('value' => $this->langID, 'type' => PDO::PARAM_INT),
+            'id_user' => array('value' => $this->id_user, 'type' => PDO::PARAM_INT),
         );
         $notifications = $this->mysql->query($sql, $params);
 
@@ -193,7 +191,7 @@ class Push extends Model
         return array();
     }
 
-    public function has($type)
+    public function has(int $type): bool
     {
         $sql          = '
             SELECT *
@@ -201,8 +199,8 @@ class Push extends Model
             WHERE id_user = :id_user AND id_appacman_notification = :id
         ';
         $params       = array(
-            'id_user' => array('value' => $this->id_user, 'type' => \PDO::PARAM_INT),
-            'id'      => array('value' => $type, 'type' => \PDO::PARAM_INT)
+            'id_user' => array('value' => $this->id_user, 'type' => PDO::PARAM_INT),
+            'id'      => array('value' => $type, 'type' => PDO::PARAM_INT)
         );
         $notification = $this->mysql->query($sql, $params);
 
@@ -212,12 +210,7 @@ class Push extends Model
         return false;
     }
 
-    /**
-     * save notifications configuration
-     *
-     * @param $notifications
-     */
-    public function modifyNotifications($notifications)
+    public function modifyNotifications(array $notifications): void
     {
         foreach ($notifications as $id => $activated) {
             if ($activated) {
@@ -228,14 +221,7 @@ class Push extends Model
         }
     }
 
-    /**
-     * activate notification
-     *
-     * @param $id
-     *
-     * @return boolean success
-     */
-    public function addNotification($id)
+    public function addNotification(int $id): bool
     {
         if (!$this->has($id)) {
             $sql    = '
@@ -244,8 +230,8 @@ class Push extends Model
                     id_appacman_notification = :id
             ';
             $params = array(
-                'id_user' => array('value' => $this->id_user, 'type' => \PDO::PARAM_INT),
-                'id'      => array('value' => $id, 'type' => \PDO::PARAM_INT)
+                'id_user' => array('value' => $this->id_user, 'type' => PDO::PARAM_INT),
+                'id'      => array('value' => $id, 'type' => PDO::PARAM_INT)
             );
             $this->mysql->query($sql, $params);
             return $this->mysql->getState();
@@ -253,14 +239,7 @@ class Push extends Model
         return true;
     }
 
-    /**
-     * remove notification
-     *
-     * @param $id
-     *
-     * @return boolean success
-     */
-    public function removeNotification($id)
+    public function removeNotification(int $id): bool
     {
         $sql    = '
             DELETE FROM user_appacman_notification
@@ -268,8 +247,8 @@ class Push extends Model
                 id_appacman_notification = :id
         ';
         $params = array(
-            'id_user' => array('value' => $this->id_user, 'type' => \PDO::PARAM_INT),
-            'id'      => array('value' => $id, 'type' => \PDO::PARAM_INT)
+            'id_user' => array('value' => $this->id_user, 'type' => PDO::PARAM_INT),
+            'id'      => array('value' => $id, 'type' => PDO::PARAM_INT)
         );
         $this->mysql->query($sql, $params);
         return $this->mysql->getState();
