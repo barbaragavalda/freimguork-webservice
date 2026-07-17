@@ -2,6 +2,7 @@
 
 namespace Webservice\Controller;
 
+use Core\Controller\CacheManager;
 use Core\Controller\Controller;
 use Core\Utils\Config;
 use Webservice\Model\App;
@@ -20,11 +21,13 @@ abstract class WebserviceController extends Controller
 
     protected ?User $user = null;
 
+    protected ?string $token = null;
+
     protected bool|string $error = false;
 
-    public function __construct()
+    public function __construct(Config $config, CacheManager $modelCache)
     {
-        parent::__construct();
+        parent::__construct($config, $modelCache);
 
         $this->method = $_SERVER['REQUEST_METHOD'];
         $headers      = getallheaders();
@@ -105,6 +108,15 @@ abstract class WebserviceController extends Controller
         if (array_key_exists('Authorization-Alias', $headers)) {
             $token = $headers['Authorization-Alias'];
         }
+        // Apache's front-controller .htaccess does an internal redirect to
+        // index.dev.php/index.php, which renames any already-set
+        // HTTP_AUTHORIZATION env var to REDIRECT_HTTP_AUTHORIZATION - a well
+        // known Apache + mod_rewrite quirk, see
+        // https://github.com/symfony/symfony/issues/19693 for the same issue
+        // in another framework.
+        if ($token === false && array_key_exists('REDIRECT_HTTP_AUTHORIZATION', $_SERVER)) {
+            $token = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+        }
 
         $correctToken = false;
         if ($token != '') {
@@ -116,6 +128,7 @@ abstract class WebserviceController extends Controller
             if ($token != $defaultToken && $auxUser->loadWithToken($token)) {
                 // petitions with token (where users must be logged in)
                 $this->user   = $auxUser;
+                $this->token  = $token;
                 $correctToken = true;
             } else {
                 // petitions without token

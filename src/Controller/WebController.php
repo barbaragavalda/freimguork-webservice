@@ -2,6 +2,7 @@
 
 namespace Webservice\Controller;
 
+use Core\Controller\CacheManager;
 use Core\Controller\Controller;
 use Core\Utils\Config;
 
@@ -13,12 +14,11 @@ abstract class WebController extends Controller
     protected string $googlePlay      = '';
     protected string $appStore        = '';
 
-    public function __construct()
+    public function __construct(Config $config, CacheManager $modelCache)
     {
-        parent::__construct();
+        parent::__construct($config, $modelCache);
 
-        $config                = Config::getInstance();
-        $webserviceConfig      = $config->get('webservice');
+        $webserviceConfig      = $this->config->get('webservice');
         $this->urlScheme       = $webserviceConfig['url_scheme'];
         $this->openAppDeepLink = $this->urlScheme . 'open';
         $this->googlePlay      = $webserviceConfig['google_play'];
