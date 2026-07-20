@@ -10,6 +10,11 @@ use Webservice\Model\UserToken;
 class Login extends WebserviceController
 {
 
+    protected function requiresUserToken(): bool
+    {
+        return false;
+    }
+
     protected function run(): void
     {
         $email    = trim((string) ($_POST['email'] ?? ''));

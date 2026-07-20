@@ -130,14 +130,11 @@ abstract class WebserviceController extends Controller
                 $this->user   = $auxUser;
                 $this->token  = $token;
                 $correctToken = true;
-            } else {
-                // petitions without token
-                $entitiesWithoutToken = $webserviceConfig['entities_without_token'];
-                if (count($this->parts) && in_array($this->parts[0], $entitiesWithoutToken)) {
-                    if ($defaultToken == $token) {
-                        $correctToken = true;
-                    }
-                }
+            } elseif ($defaultToken == $token && !$this->requiresUserToken()) {
+                // the app's own shared secret is enough for a controller
+                // that declares it doesn't need a user token yet (e.g.
+                // Register/Login)
+                $correctToken = true;
             }
         }
 
@@ -145,6 +142,17 @@ abstract class WebserviceController extends Controller
             return 401;
         }
         return false;
+    }
+
+    /**
+     * true (the default) if this entity needs a logged-in user's own token;
+     * override to false for entities that can't have one yet, like
+     * Register/Login - keeps that fact next to the controller it describes
+     * instead of a project having to remember to list it in its own config
+     */
+    protected function requiresUserToken(): bool
+    {
+        return true;
     }
 
     abstract protected function run(): void;
