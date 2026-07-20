@@ -22,7 +22,7 @@ class Login extends WebserviceController
 
         $user = new User();
         if (!$email || !$password || !$user->authenticate($email, $password)) {
-            $this->error = _('Invalid email or password.');
+            $this->error = $this->translate('Invalid email or password.');
             return;
         }
 

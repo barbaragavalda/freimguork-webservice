@@ -15,6 +15,14 @@ abstract class WebserviceController extends Controller
     const string POST   = 'POST';
     const string DELETE = 'DELETE';
 
+    /**
+     * this package's own gettext domain (see Core\Utils\Language::initGettext(),
+     * bound for any project that declares 'vendorApps' => ['Webservice'] in
+     * its config/projects.php) - translations live in src/locale/ here, not
+     * in whichever project ends up consuming this controller
+     */
+    const string GETTEXT_DOMAIN = 'messenges_webservice';
+
     protected string $method;
 
     private ?App $app = null;
@@ -142,6 +150,15 @@ abstract class WebserviceController extends Controller
             return 401;
         }
         return false;
+    }
+
+    /**
+     * translates $text against this package's own gettext domain, instead of
+     * the consuming project's (see GETTEXT_DOMAIN)
+     */
+    protected function translate(string $text): string
+    {
+        return dgettext(self::GETTEXT_DOMAIN, $text);
     }
 
     /**

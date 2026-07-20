@@ -1,0 +1,21 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: freimguork-webservice\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ca_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.5\n"
+
+msgid "All fields are required."
+msgstr "Tots els camps són obligatoris."
+
+msgid "That email is already registered."
+msgstr "Aquest email ja està registrat."
+
+msgid "Invalid email or password."
+msgstr "Email o contrasenya incorrectes."

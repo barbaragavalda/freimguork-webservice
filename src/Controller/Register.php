@@ -22,14 +22,14 @@ class Register extends WebserviceController
         $name     = trim((string) ($_POST['name'] ?? ''));
 
         if (!$email || !$password || !$name) {
-            $this->error = _('All fields are required.');
+            $this->error = $this->translate('All fields are required.');
             return;
         }
 
         $user = new User();
         $id   = $user->register($email, $password, $name);
         if (!$id) {
-            $this->error = _('That email is already registered.');
+            $this->error = $this->translate('That email is already registered.');
             return;
         }
 
