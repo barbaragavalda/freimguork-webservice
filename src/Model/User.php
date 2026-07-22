@@ -10,6 +10,15 @@ class User extends Model
 {
     private const string PASSWORD_CONTEXT = 'webservice:user:password';
 
+    /**
+     * shared with Controller\Register (and any future username-change
+     * endpoint) so the rule lives in one place - 3-20 chars, letters/
+     * numbers/underscore/dot; uniqueness itself is enforced by the `username`
+     * column's UNIQUE KEY, case-insensitive under this schema's
+     * utf8mb4_unicode_ci collation, not by any extra normalization here
+     */
+    public const string USERNAME_PATTERN = '/^[a-zA-Z0-9_.]{3,20}$/';
+
     protected array $info = array();
 
     public function getInfo(): array
@@ -18,18 +27,18 @@ class User extends Model
     }
 
     /**
-     * creates a new user, returns its id, or false if the email is already
-     * registered or the insert failed
+     * creates a new user, returns its id, or false if the email/username is
+     * already registered or the insert failed
      */
-    public function register(string $email, string $password, string $name): int|false
+    public function register(string $email, string $password, string $username): int|false
     {
-        if ($this->loadWithEmail($email)) {
+        if ($this->loadWithEmail($email) || $this->loadWithUsername($username)) {
             return false;
         }
 
         $sql    = '
-            INSERT INTO user (email, password, name)
-            VALUES (:email, :password, :name)
+            INSERT INTO user (email, password, username)
+            VALUES (:email, :password, :username)
         ';
         $params = array(
             'email'    => array('value' => $email, 'type' => PDO::PARAM_STR),
@@ -37,7 +46,7 @@ class User extends Model
                 'value' => OneWay::encrypt($password, self::PASSWORD_CONTEXT),
                 'type'  => PDO::PARAM_STR,
             ),
-            'name'     => array('value' => $name, 'type' => PDO::PARAM_STR),
+            'username' => array('value' => $username, 'type' => PDO::PARAM_STR),
         );
         $this->mysql->query($sql, $params);
         if (!$this->mysql->getState()) {
@@ -47,6 +56,23 @@ class User extends Model
         $this->id = (int) $this->mysql->lastInsertId();
         $this->loadWithID($this->id);
         return $this->id;
+    }
+
+    /**
+     * deletes this user's own row - the caller is responsible for revoking
+     * its tokens first (see UserToken::revokeAllForUser()), same composition
+     * pattern as register() + UserToken::issue() in Controller\Register
+     */
+    public function delete(int $id): void
+    {
+        $sql    = '
+            DELETE FROM user
+            WHERE id_user = :id_user
+        ';
+        $params = array(
+            'id_user' => array('value' => $id, 'type' => PDO::PARAM_INT),
+        );
+        $this->mysql->query($sql, $params);
     }
 
     public function authenticate(string $email, string $password): bool
@@ -80,6 +106,20 @@ class User extends Model
         ';
         $params = array(
             'email' => array('value' => $email, 'type' => PDO::PARAM_STR),
+        );
+        $user   = $this->mysql->query($sql, $params);
+        return $this->load($user);
+    }
+
+    public function loadWithUsername(string $username): bool|int
+    {
+        $sql    = '
+            SELECT *
+            FROM user
+            WHERE username = :username
+        ';
+        $params = array(
+            'username' => array('value' => $username, 'type' => PDO::PARAM_STR),
         );
         $user   = $this->mysql->query($sql, $params);
         return $this->load($user);

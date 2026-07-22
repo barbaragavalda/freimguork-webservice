@@ -19,17 +19,34 @@ class Register extends WebserviceController
     {
         $email    = trim((string) ($_POST['email'] ?? ''));
         $password = (string) ($_POST['password'] ?? '');
-        $name     = trim((string) ($_POST['name'] ?? ''));
+        $username = trim((string) ($_POST['username'] ?? ''));
 
-        if (!$email || !$password || !$name) {
+        if (!$email || !$password || !$username) {
             $this->error = $this->translate('All fields are required.');
+            return;
+        }
+        if (!preg_match(User::USERNAME_PATTERN, $username)) {
+            $this->error = $this->translate(
+                'Username must be 3-20 characters long and contain only letters, numbers, "_" or "."'
+            );
             return;
         }
 
         $user = new User();
-        $id   = $user->register($email, $password, $name);
-        if (!$id) {
+        // checked separately (rather than just relying on register()'s own
+        // internal check) so each collision gets its own clear message
+        if ($user->loadWithEmail($email)) {
             $this->error = $this->translate('That email is already registered.');
+            return;
+        }
+        if ($user->loadWithUsername($username)) {
+            $this->error = $this->translate('That username is already taken.');
+            return;
+        }
+
+        $id = $user->register($email, $password, $username);
+        if (!$id) {
+            $this->error = $this->translate('Registration failed.');
             return;
         }
 

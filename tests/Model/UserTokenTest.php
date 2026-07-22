@@ -53,6 +53,18 @@ class UserTokenTest extends TestCase
         $this->assertSame('some-token', $mysql->queries[0]['params']['token']['value']);
     }
 
+    public function testRevokeAllForUserDeletesByUserID(): void
+    {
+        $mysql     = new FixturePdo();
+        $userToken = new UserToken($mysql);
+
+        $userToken->revokeAllForUser(42);
+
+        $this->assertCount(1, $mysql->queries);
+        $this->assertStringContainsString('DELETE FROM user_token', $mysql->queries[0]['sql']);
+        $this->assertSame(42, $mysql->queries[0]['params']['id_user']['value']);
+    }
+
     public function testTouchUpdatesLastUsedByToken(): void
     {
         $mysql     = new FixturePdo();

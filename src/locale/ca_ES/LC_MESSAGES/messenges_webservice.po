@@ -19,3 +19,12 @@ msgstr "Aquest email ja està registrat."
 
 msgid "Invalid email or password."
 msgstr "Email o contrasenya incorrectes."
+
+msgid "Username must be 3-20 characters long and contain only letters, numbers, \"_\" or \".\""
+msgstr "El nom d'usuari ha de tenir entre 3 i 20 caràcters i només pot contenir lletres, números, \"_\" o \".\""
+
+msgid "That username is already taken."
+msgstr "Aquest nom d'usuari ja està agafat."
+
+msgid "Registration failed."
+msgstr "El registre ha fallat."

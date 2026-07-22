@@ -41,6 +41,22 @@ class UserToken extends Model
         $this->mysql->query($sql, $params);
     }
 
+    /**
+     * revokes every device token for a user in one go - used by
+     * Controller\DeleteAccount before deleting the user row itself
+     */
+    public function revokeAllForUser(int $userID): void
+    {
+        $sql    = '
+            DELETE FROM user_token
+            WHERE id_user = :id_user
+        ';
+        $params = array(
+            'id_user' => array('value' => $userID, 'type' => PDO::PARAM_INT),
+        );
+        $this->mysql->query($sql, $params);
+    }
+
     public function touch(string $token): void
     {
         $sql    = '
