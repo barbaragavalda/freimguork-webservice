@@ -14,8 +14,10 @@ class User extends Model
      * shared with Controller\Register (and any future username-change
      * endpoint) so the rule lives in one place - 3-20 chars, letters/
      * numbers/underscore/dot; uniqueness itself is enforced by the `username`
-     * column's UNIQUE KEY, case-insensitive under this schema's
-     * utf8mb4_unicode_ci collation, not by any extra normalization here
+     * column's UNIQUE KEY - the consuming app's own db.sql owns that column
+     * (this package doesn't define the `user` table), and case-insensitive
+     * matching ("Bar"/"bar" colliding) depends on whichever *_ci collation
+     * that table ends up with, not on anything this package does itself
      */
     public const string USERNAME_PATTERN = '/^[a-zA-Z0-9_.]{3,20}$/';
 
