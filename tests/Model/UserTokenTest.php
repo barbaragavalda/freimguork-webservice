@@ -20,7 +20,7 @@ class UserTokenTest extends TestCase
         $this->assertTrue(ctype_xdigit($token));
     }
 
-    public function testIssueInsertsTheGeneratedTokenForTheGivenUser(): void
+    public function testIssueInsertsTheHashOfTheGeneratedTokenForTheGivenUser(): void
     {
         $mysql     = new FixturePdo();
         $userToken = new UserToken($mysql);
@@ -30,7 +30,9 @@ class UserTokenTest extends TestCase
         $this->assertCount(1, $mysql->queries);
         $this->assertStringContainsString('INSERT INTO user_token', $mysql->queries[0]['sql']);
         $this->assertSame(42, $mysql->queries[0]['params']['id_user']['value']);
-        $this->assertSame($token, $mysql->queries[0]['params']['token']['value']);
+        // only the hash is ever stored - never the plaintext token itself
+        $this->assertSame(UserToken::hash($token), $mysql->queries[0]['params']['token']['value']);
+        $this->assertNotSame($token, $mysql->queries[0]['params']['token']['value']);
         $this->assertSame("Barbara's iPhone", $mysql->queries[0]['params']['device_label']['value']);
     }
 
@@ -50,7 +52,7 @@ class UserTokenTest extends TestCase
 
         $this->assertCount(1, $mysql->queries);
         $this->assertStringContainsString('DELETE FROM user_token', $mysql->queries[0]['sql']);
-        $this->assertSame('some-token', $mysql->queries[0]['params']['token']['value']);
+        $this->assertSame(UserToken::hash('some-token'), $mysql->queries[0]['params']['token']['value']);
     }
 
     public function testRevokeAllForUserDeletesByUserID(): void
@@ -74,7 +76,14 @@ class UserTokenTest extends TestCase
 
         $this->assertCount(1, $mysql->queries);
         $this->assertStringContainsString('UPDATE user_token', $mysql->queries[0]['sql']);
-        $this->assertSame('some-token', $mysql->queries[0]['params']['token']['value']);
+        $this->assertSame(UserToken::hash('some-token'), $mysql->queries[0]['params']['token']['value']);
+    }
+
+    public function testHashIsDeterministicAndDistinctPerToken(): void
+    {
+        $this->assertSame(UserToken::hash('abc'), UserToken::hash('abc'));
+        $this->assertNotSame(UserToken::hash('abc'), UserToken::hash('def'));
+        $this->assertSame(64, strlen(UserToken::hash('abc')));
     }
 
 }

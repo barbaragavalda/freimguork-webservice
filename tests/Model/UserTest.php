@@ -2,7 +2,9 @@
 
 namespace Webservice\Tests\Model;
 
+use Core\Model\Encryptor\BlindIndex;
 use Core\Model\Encryptor\Secret;
+use Core\Model\Encryptor\TwoWay;
 use PHPUnit\Framework\TestCase;
 use Webservice\Model\User;
 use Webservice\Tests\Fixtures\FixturePdo;
@@ -48,20 +50,48 @@ class UserTest extends TestCase
         $this->assertFalse($user->loadWithID(999));
     }
 
-    public function testLoadWithEmailPopulatesInfoWhenFound(): void
+    public function testLoadWithEmailPopulatesInfoAndDecryptsTheEmail(): void
     {
-        $row  = array('id_user' => 3, 'email' => 'a@example.com', 'password' => 'hash', 'username' => 'a');
+        $id      = 3;
+        $created = '2026-01-01 00:00:00';
+        $email   = 'a@example.com';
+        // matches Model::setKey()'s "<id>_<created>_<field>" convention
+        // (also documented in this project's own README, "First admin
+        // user") - not a guess at a private implementation detail
+        $context = $id . '_' . $created . '_email';
+
+        $row = array(
+            'id_user'    => $id,
+            'email'      => TwoWay::encrypt($email, $context),
+            'email_bidx' => BlindIndex::compute($email, 'email'),
+            'password'   => 'hash',
+            'username'   => 'a',
+            'created'    => $created,
+        );
         $user = new User(new FixturePdo(array(array($row))));
 
-        $id = $user->loadWithEmail('a@example.com');
+        $id = $user->loadWithEmail($email);
 
         $this->assertSame(3, $id);
-        $this->assertSame($row, $user->getInfo());
+        $expected          = $row;
+        $expected['email'] = $email; // decrypted back to plaintext
+        $this->assertSame($expected, $user->getInfo());
+    }
+
+    public function testLoadWithEmailMatchesRegardlessOfCase(): void
+    {
+        // BlindIndex::normalize() lowercases+trims before hashing, so the
+        // stored bidx for "A@Example.com" is the same one looking up
+        // "a@example.com" would compute
+        $row = array('id_user' => 3, 'email_bidx' => BlindIndex::compute('A@Example.com', 'email'), 'password' => 'hash', 'username' => 'a');
+        $user = new User(new FixturePdo(array(array($row))));
+
+        $this->assertSame(3, $user->loadWithEmail('a@example.com'));
     }
 
     public function testLoadWithUsernamePopulatesInfoWhenFound(): void
     {
-        $row  = array('id_user' => 3, 'email' => 'a@example.com', 'password' => 'hash', 'username' => 'alice');
+        $row  = array('id_user' => 3, 'password' => 'hash', 'username' => 'alice');
         $user = new User(new FixturePdo(array(array($row))));
 
         $id = $user->loadWithUsername('alice');
@@ -72,7 +102,7 @@ class UserTest extends TestCase
 
     public function testRegisterReturnsFalseWhenEmailAlreadyRegistered(): void
     {
-        $existing = array('id_user' => 1, 'email' => 'taken@example.com', 'password' => 'hash', 'username' => 'x');
+        $existing = array('id_user' => 1, 'password' => 'hash', 'username' => 'x');
         $mysql    = new FixturePdo(array(array($existing)));
         $user     = new User($mysql);
 
@@ -86,7 +116,7 @@ class UserTest extends TestCase
 
     public function testRegisterReturnsFalseWhenUsernameAlreadyTaken(): void
     {
-        $existing = array('id_user' => 1, 'email' => 'other@example.com', 'password' => 'hash', 'username' => 'taken');
+        $existing = array('id_user' => 1, 'password' => 'hash', 'username' => 'taken');
         // 1st query: loadWithEmail() (not found), 2nd: loadWithUsername() (found)
         $mysql = new FixturePdo(array(array(), array($existing)));
         $user  = new User($mysql);
@@ -100,26 +130,40 @@ class UserTest extends TestCase
     public function testRegisterReturnsFalseWhenTheInsertFails(): void
     {
         // email not found, username not found, but the INSERT itself fails
+        // (register() returns before loadWithID()/encryptAndStoreEmail() run)
         $mysql = new FixturePdo(array(array(), array()), state: false);
         $user  = new User($mysql);
 
         $this->assertFalse($user->register('new@example.com', 'secret123', 'newuser'));
     }
 
-    public function testRegisterHashesThePasswordInsteadOfStoringItInPlainText(): void
+    public function testRegisterHashesThePasswordAndEncryptsTheEmailInsteadOfStoringThemInPlainText(): void
     {
-        $newRow = array('id_user' => 7, 'email' => 'new@example.com', 'password' => 'irrelevant', 'username' => 'newuser');
+        $created = '2026-01-01 00:00:00';
+        // the row loadWithID() re-reads right after the INSERT - email is
+        // still the empty placeholder at this point, encryptAndStoreEmail()
+        // (a further UPDATE) fills it in afterwards
+        $newRow = array('id_user' => 7, 'email' => '', 'password' => 'irrelevant', 'username' => 'newuser', 'created' => $created);
         // 1st: loadWithEmail() (not found), 2nd: loadWithUsername() (not
-        // found), 3rd: the INSERT, 4th: loadWithID() re-read
-        $mysql = new FixturePdo(array(array(), array(), array(), array($newRow)), lastInsertId: '7');
+        // found), 3rd: the INSERT, 4th: loadWithID() re-read, 5th: the
+        // encryptAndStoreEmail() UPDATE (return value unused)
+        $mysql = new FixturePdo(array(array(), array(), array(), array($newRow), array()), lastInsertId: '7');
         $user  = new User($mysql);
 
         $id = $user->register('new@example.com', 'secret123', 'newuser');
 
         $this->assertSame(7, $id);
+
         $storedPassword = $mysql->queries[2]['params']['password']['value'];
         $this->assertNotSame('secret123', $storedPassword);
         $this->assertStringStartsWith('$', $storedPassword);
+
+        $storedEmail = $mysql->queries[4]['params']['email']['value'];
+        $this->assertNotSame('new@example.com', $storedEmail);
+        $this->assertStringStartsWith('$gcm256$', $storedEmail);
+        // getInfo() sees the plaintext, kept in memory rather than requiring
+        // another DB round trip to decrypt what was just encrypted
+        $this->assertSame('new@example.com', $user->getInfo()['email']);
     }
 
     public function testAuthenticateReturnsFalseWhenUserNotFound(): void
@@ -136,11 +180,13 @@ class UserTest extends TestCase
         // production uses), then feed that hash back as a "found" row for
         // a separate authenticate() call - avoids hardcoding this class's
         // private hashing context in the test
-        $registerMysql = new FixturePdo(array(array(), array(), array(), array()));
+        $created       = '2026-01-01 00:00:00';
+        $insertedRow   = array('id_user' => 9, 'email' => '', 'password' => 'irrelevant', 'username' => 'realuser', 'created' => $created);
+        $registerMysql = new FixturePdo(array(array(), array(), array(), array($insertedRow), array()));
         (new User($registerMysql))->register('real@example.com', 'correct horse', 'realuser');
         $hashedPassword = $registerMysql->queries[2]['params']['password']['value'];
 
-        $row = array('id_user' => 9, 'email' => 'real@example.com', 'password' => $hashedPassword, 'username' => 'realuser');
+        $row = array('id_user' => 9, 'password' => $hashedPassword, 'username' => 'realuser');
 
         $this->assertTrue((new User(new FixturePdo(array(array($row)))))->authenticate('real@example.com', 'correct horse'));
         $this->assertFalse((new User(new FixturePdo(array(array($row)))))->authenticate('real@example.com', 'wrong password'));

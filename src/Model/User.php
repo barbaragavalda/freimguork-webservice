@@ -2,13 +2,22 @@
 
 namespace Webservice\Model;
 
+use Core\Model\Encryptor\BlindIndex;
 use Core\Model\Encryptor\OneWay;
+use Core\Model\Encryptor\TwoWay;
 use Core\Model\Model;
 use PDO;
 
 class User extends Model
 {
     private const string PASSWORD_CONTEXT = 'webservice:user:password';
+
+    /**
+     * field name fed to BlindIndex::compute() - this and $this->key . self::EMAIL_FIELD
+     * (see load()/encryptAndStoreEmail()) are the two places "email" as a
+     * field label is threaded through the encryption/lookup machinery
+     */
+    private const string EMAIL_FIELD = 'email';
 
     /**
      * shared with Controller\Register (and any future username-change
@@ -38,17 +47,23 @@ class User extends Model
             return false;
         }
 
+        // email is inserted empty for now: TwoWay's per-row context (see
+        // Model::setKey(), "<id>_<created>_<field>") needs id_user, which
+        // AUTO_INCREMENT only assigns once the row already exists -
+        // encryptAndStoreEmail() below fills it in right after, in the
+        // same request, before this method returns to its caller
         $sql    = '
-            INSERT INTO user (email, password, username)
-            VALUES (:email, :password, :username)
+            INSERT INTO user (email, email_bidx, password, username)
+            VALUES (:email, :email_bidx, :password, :username)
         ';
         $params = array(
-            'email'    => array('value' => $email, 'type' => PDO::PARAM_STR),
-            'password' => array(
+            'email'      => array('value' => '', 'type' => PDO::PARAM_STR),
+            'email_bidx' => array('value' => BlindIndex::compute($email, self::EMAIL_FIELD), 'type' => PDO::PARAM_STR),
+            'password'   => array(
                 'value' => OneWay::encrypt($password, self::PASSWORD_CONTEXT),
                 'type'  => PDO::PARAM_STR,
             ),
-            'username' => array('value' => $username, 'type' => PDO::PARAM_STR),
+            'username'   => array('value' => $username, 'type' => PDO::PARAM_STR),
         );
         $this->mysql->query($sql, $params);
         if (!$this->mysql->getState()) {
@@ -57,7 +72,33 @@ class User extends Model
 
         $this->id = (int) $this->mysql->lastInsertId();
         $this->loadWithID($this->id);
+        $this->encryptAndStoreEmail($email);
         return $this->id;
+    }
+
+    /**
+     * encrypts $email under this row's own per-row context (now that
+     * id_user/created are known, see register()) and writes it, keeping
+     * $this->info's copy as the plaintext so the caller doesn't need an
+     * extra re-read to see it decrypted
+     */
+    private function encryptAndStoreEmail(string $email): void
+    {
+        $this->setCreated($this->info['created']);
+        $this->setKey();
+
+        $sql    = '
+            UPDATE user
+            SET email = :email
+            WHERE id_user = :id_user
+        ';
+        $params = array(
+            'email'   => array('value' => TwoWay::encrypt($email, $this->key . self::EMAIL_FIELD), 'type' => PDO::PARAM_STR),
+            'id_user' => array('value' => $this->id, 'type' => PDO::PARAM_INT),
+        );
+        $this->mysql->query($sql, $params);
+
+        $this->info['email'] = $email;
     }
 
     /**
@@ -104,10 +145,10 @@ class User extends Model
         $sql    = '
             SELECT *
             FROM user
-            WHERE email = :email
+            WHERE email_bidx = :email_bidx
         ';
         $params = array(
-            'email' => array('value' => $email, 'type' => PDO::PARAM_STR),
+            'email_bidx' => array('value' => BlindIndex::compute($email, self::EMAIL_FIELD), 'type' => PDO::PARAM_STR),
         );
         $user   = $this->mysql->query($sql, $params);
         return $this->load($user);
@@ -136,7 +177,7 @@ class User extends Model
             WHERE t.token = :token
         ';
         $params = array(
-            'token' => array('value' => $token, 'type' => PDO::PARAM_STR),
+            'token' => array('value' => UserToken::hash($token), 'type' => PDO::PARAM_STR),
         );
         $user   = $this->mysql->query($sql, $params);
         return $this->load($user);
@@ -147,6 +188,24 @@ class User extends Model
         if (count($user)) {
             $this->info = $user[0];
             $this->id   = $this->info['id_user'];
+
+            // decrypt in place so every loadWith*() gives callers the real
+            // email back, not the ciphertext - guarded because a brand new
+            // row (mid-way through register(), before encryptAndStoreEmail()
+            // runs) still has an empty placeholder here, which TwoWay::decrypt()
+            // itself already refuses to touch (returns false on an empty
+            // string); also requires 'created' (setKey()'s per-row context),
+            // never actually missing on a real `user` row (NOT NULL DEFAULT
+            // CURRENT_TIMESTAMP) but a cheap guard against a malformed row
+            if (!empty($this->info['email']) && !empty($this->info['created'])) {
+                $this->setCreated($this->info['created']);
+                $this->setKey();
+                $decrypted = TwoWay::decrypt($this->info['email'], $this->key . self::EMAIL_FIELD);
+                if ($decrypted !== false) {
+                    $this->info['email'] = $decrypted;
+                }
+            }
+
             return $this->id;
         }
         return false;

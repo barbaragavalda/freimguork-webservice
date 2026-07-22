@@ -9,8 +9,22 @@ class UserToken extends Model
 {
 
     /**
+     * only the SHA-256 hash of a token ever touches the database - a token
+     * is already a 256-bit random value (bin2hex(random_bytes(32))), so
+     * there's no dictionary/guessing attack a slow, peppered hash (like
+     * OneWay's password hashing) would defend against here; this exists
+     * purely so read access to the DB alone (a leaked backup, etc.) doesn't
+     * hand out directly-usable session tokens
+     */
+    public static function hash(string $token): string
+    {
+        return hash('sha256', $token);
+    }
+
+    /**
      * issues a new opaque session token for a user and stores it, so it can
-     * later be looked up via User::loadWithToken()
+     * later be looked up via User::loadWithToken() - returns the plaintext
+     * token (only the caller/client ever sees it), stores only its hash
      */
     public function issue(int $userID, ?string $deviceLabel = null): string
     {
@@ -21,7 +35,7 @@ class UserToken extends Model
         ';
         $params = array(
             'id_user'      => array('value' => $userID, 'type' => PDO::PARAM_INT),
-            'token'        => array('value' => $token, 'type' => PDO::PARAM_STR),
+            'token'        => array('value' => self::hash($token), 'type' => PDO::PARAM_STR),
             'device_label' => array('value' => $deviceLabel, 'type' => PDO::PARAM_STR),
         );
         $this->mysql->query($sql, $params);
@@ -36,7 +50,7 @@ class UserToken extends Model
             WHERE token = :token
         ';
         $params = array(
-            'token' => array('value' => $token, 'type' => PDO::PARAM_STR),
+            'token' => array('value' => self::hash($token), 'type' => PDO::PARAM_STR),
         );
         $this->mysql->query($sql, $params);
     }
@@ -65,7 +79,7 @@ class UserToken extends Model
             WHERE token = :token
         ';
         $params = array(
-            'token' => array('value' => $token, 'type' => PDO::PARAM_STR),
+            'token' => array('value' => self::hash($token), 'type' => PDO::PARAM_STR),
         );
         $this->mysql->query($sql, $params);
     }
