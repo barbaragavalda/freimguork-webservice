@@ -2,8 +2,11 @@
 
 namespace Webservice\Controller;
 
+use Core\Controller\CacheManager;
 use Core\Model\Utils\Mail;
 use Core\Routing\Attribute\Route;
+use Core\Utils\Config;
+use Core\Utils\Language;
 use Throwable;
 use Webservice\Model\PasswordReset;
 use Webservice\Model\User;
@@ -11,6 +14,11 @@ use Webservice\Model\User;
 #[Route('/password/forgot', methods: ['POST'], name: 'webservice.password.forgot')]
 class ForgotPassword extends WebserviceController
 {
+
+    public function __construct(Config $config, CacheManager $modelCache, private readonly Language $language)
+    {
+        parent::__construct($config, $modelCache);
+    }
 
     protected function requiresUserToken(): bool
     {
@@ -30,20 +38,37 @@ class ForgotPassword extends WebserviceController
         // account-enumeration oracle
         $user = new User();
         if ($user->loadWithEmail($email)) {
-            $code = (new PasswordReset())->create($user->getID());
-            $this->sendCode($user->getInfo()['email'], $code, $user->getID());
+            $code           = (new PasswordReset())->create($user->getID());
+            $idAppacmanLang = $user->getInfo()['id_appacman_lang'] ?? null;
+            $this->sendCode($user->getInfo()['email'], $code, $user->getID(), $idAppacmanLang);
         }
     }
 
-    private function sendCode(string $email, string $code, int $idUser): void
+    /**
+     * sent in the language $idAppacmanLang resolves to (the one the
+     * recipient registered with, see User::register()) rather than
+     * whatever language this particular request happens to carry - a
+     * password-reset request is often made from an unfamiliar device/
+     * browser with no reason to share the account's own locale
+     */
+    private function sendCode(string $email, string $code, int $idUser, ?int $idAppacmanLang): void
     {
+        $culture = $this->language->getCulture($idAppacmanLang);
+
+        [$subject, $body] = $this->language->withCulture($culture, function () use ($code) {
+            return array(
+                $this->translate('Your password reset code'),
+                $this->translate('Your password reset code is:') . ' <strong>' . $code . '</strong><br>'
+                . $this->translate('It expires in 15 minutes.'),
+            );
+        });
+
         try {
             (new Mail())->send(
                 array(),
                 array(array('email' => $email, 'name' => '')),
-                $this->translate('Your password reset code'),
-                $this->translate('Your password reset code is:') . ' <strong>' . $code . '</strong><br>'
-                . $this->translate('It expires in 15 minutes.')
+                $subject,
+                $body
             );
         } catch (Throwable $e) {
             // never surface a mail-sending/config problem to the client -

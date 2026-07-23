@@ -39,9 +39,15 @@ class User extends Model
 
     /**
      * creates a new user, returns its id, or false if the email/username is
-     * already registered or the insert failed
+     * already registered or the insert failed. $idAppacmanLang (the
+     * consuming app's own appacman_lang.id_appacman_lang, resolved from
+     * this request's language by the caller - see Controller\Register) is
+     * stored so a later notification (e.g. Controller\ForgotPassword's
+     * reset email) can be sent in the language this user actually
+     * registered with, not whatever language a later, unrelated request
+     * happens to resolve to
      */
-    public function register(string $email, string $password, string $username): int|false
+    public function register(string $email, string $password, string $username, ?int $idAppacmanLang = null): int|false
     {
         if ($this->loadWithEmail($email) || $this->loadWithUsername($username)) {
             return false;
@@ -53,17 +59,18 @@ class User extends Model
         // encryptAndStoreEmail() below fills it in right after, in the
         // same request, before this method returns to its caller
         $sql    = '
-            INSERT INTO user (email, email_bidx, password, username)
-            VALUES (:email, :email_bidx, :password, :username)
+            INSERT INTO user (email, email_bidx, password, username, id_appacman_lang)
+            VALUES (:email, :email_bidx, :password, :username, :id_appacman_lang)
         ';
         $params = array(
-            'email'      => array('value' => '', 'type' => PDO::PARAM_STR),
-            'email_bidx' => array('value' => BlindIndex::compute($email, self::EMAIL_FIELD), 'type' => PDO::PARAM_STR),
-            'password'   => array(
+            'email'            => array('value' => '', 'type' => PDO::PARAM_STR),
+            'email_bidx'       => array('value' => BlindIndex::compute($email, self::EMAIL_FIELD), 'type' => PDO::PARAM_STR),
+            'password'         => array(
                 'value' => OneWay::encrypt($password, self::PASSWORD_CONTEXT),
                 'type'  => PDO::PARAM_STR,
             ),
-            'username'   => array('value' => $username, 'type' => PDO::PARAM_STR),
+            'username'         => array('value' => $username, 'type' => PDO::PARAM_STR),
+            'id_appacman_lang' => array('value' => $idAppacmanLang, 'type' => PDO::PARAM_INT),
         );
         $this->mysql->query($sql, $params);
         if (!$this->mysql->getState()) {

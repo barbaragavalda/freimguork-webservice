@@ -166,6 +166,31 @@ class UserTest extends TestCase
         $this->assertSame('new@example.com', $user->getInfo()['email']);
     }
 
+    public function testRegisterStoresTheGivenLanguageID(): void
+    {
+        $created = '2026-01-01 00:00:00';
+        $newRow  = array('id_user' => 7, 'email' => '', 'password' => 'irrelevant', 'username' => 'newuser', 'created' => $created);
+        $mysql   = new FixturePdo(array(array(), array(), array(), array($newRow), array()), lastInsertId: '7');
+        $user    = new User($mysql);
+
+        $user->register('new@example.com', 'secret123', 'newuser', 2);
+
+        $this->assertSame(2, $mysql->queries[2]['params']['id_appacman_lang']['value']);
+    }
+
+    public function testRegisterAllowsAnOmittedLanguageID(): void
+    {
+        $created = '2026-01-01 00:00:00';
+        $newRow  = array('id_user' => 7, 'email' => '', 'password' => 'irrelevant', 'username' => 'newuser', 'created' => $created);
+        $mysql   = new FixturePdo(array(array(), array(), array(), array($newRow), array()), lastInsertId: '7');
+        $user    = new User($mysql);
+
+        $id = $user->register('new@example.com', 'secret123', 'newuser');
+
+        $this->assertSame(7, $id);
+        $this->assertNull($mysql->queries[2]['params']['id_appacman_lang']['value']);
+    }
+
     public function testAuthenticateReturnsFalseWhenUserNotFound(): void
     {
         $user = new User(new FixturePdo(array(array())));

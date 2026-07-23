@@ -2,13 +2,21 @@
 
 namespace Webservice\Controller;
 
+use Core\Controller\CacheManager;
 use Core\Routing\Attribute\Route;
+use Core\Utils\Config;
+use Core\Utils\Language;
 use Webservice\Model\User;
 use Webservice\Model\UserToken;
 
 #[Route('/register', methods: ['POST'], name: 'webservice.register')]
 class Register extends WebserviceController
 {
+
+    public function __construct(Config $config, CacheManager $modelCache, private readonly Language $language)
+    {
+        parent::__construct($config, $modelCache);
+    }
 
     protected function requiresUserToken(): bool
     {
@@ -44,7 +52,12 @@ class Register extends WebserviceController
             return;
         }
 
-        $id = $user->register($email, $password, $username);
+        // stored so a later notification (e.g. Controller\ForgotPassword's
+        // reset email) can be sent in the language this user registered
+        // with - see User::register()'s own docblock
+        $idAppacmanLang = $this->language->getLanguageID($this->config->getLanguage());
+
+        $id = $user->register($email, $password, $username, $idAppacmanLang);
         if (!$id) {
             $this->error = $this->translate('Registration failed.');
             return;
