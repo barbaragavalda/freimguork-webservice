@@ -28,3 +28,18 @@ msgstr "Aquest nom d'usuari ja està agafat."
 
 msgid "Registration failed."
 msgstr "El registre ha fallat."
+
+msgid "Email is required."
+msgstr "Cal l'email."
+
+msgid "Your password reset code"
+msgstr "El teu codi per recuperar la contrasenya"
+
+msgid "Your password reset code is:"
+msgstr "El teu codi per recuperar la contrasenya és:"
+
+msgid "It expires in 15 minutes."
+msgstr "Caduca en 15 minuts."
+
+msgid "Invalid or expired code."
+msgstr "Codi invàlid o caducat."

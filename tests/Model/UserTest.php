@@ -204,4 +204,21 @@ class UserTest extends TestCase
         $this->assertSame(42, $mysql->queries[0]['params']['id_user']['value']);
     }
 
+    public function testUpdatePasswordHashesAndStoresTheNewPasswordForTheLoadedUser(): void
+    {
+        $row   = array('id_user' => 5, 'password' => 'old-hash', 'username' => 'someone');
+        $mysql = new FixturePdo(array(array($row)));
+        $user  = new User($mysql);
+        $user->loadWithID(5);
+
+        $user->updatePassword('new secret');
+
+        $this->assertCount(2, $mysql->queries);
+        $this->assertStringContainsString('UPDATE user', $mysql->queries[1]['sql']);
+        $this->assertSame(5, $mysql->queries[1]['params']['id_user']['value']);
+        $storedPassword = $mysql->queries[1]['params']['password']['value'];
+        $this->assertNotSame('new secret', $storedPassword);
+        $this->assertStringStartsWith('$', $storedPassword);
+    }
+
 }

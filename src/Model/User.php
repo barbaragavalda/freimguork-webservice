@@ -118,6 +118,29 @@ class User extends Model
         $this->mysql->query($sql, $params);
     }
 
+    /**
+     * used by Controller\ResetPassword after PasswordReset::redeem()
+     * confirms the code - relies on $this->id already being set (e.g. by a
+     * prior loadWithEmail() on this same instance), same convention as
+     * encryptAndStoreEmail()
+     */
+    public function updatePassword(string $newPassword): void
+    {
+        $sql    = '
+            UPDATE user
+            SET password = :password
+            WHERE id_user = :id_user
+        ';
+        $params = array(
+            'password' => array(
+                'value' => OneWay::encrypt($newPassword, self::PASSWORD_CONTEXT),
+                'type'  => PDO::PARAM_STR,
+            ),
+            'id_user'  => array('value' => $this->id, 'type' => PDO::PARAM_INT),
+        );
+        $this->mysql->query($sql, $params);
+    }
+
     public function authenticate(string $email, string $password): bool
     {
         if (!$this->loadWithEmail($email)) {
