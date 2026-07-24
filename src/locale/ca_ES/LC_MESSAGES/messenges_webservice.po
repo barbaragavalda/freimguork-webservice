@@ -49,3 +49,6 @@ msgstr "Introdueix una adreça de correu vàlida."
 
 msgid "Current password is incorrect."
 msgstr "La contrasenya actual és incorrecta."
+
+msgid "Unsupported language."
+msgstr "Idioma no admès."

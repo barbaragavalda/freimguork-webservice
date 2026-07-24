@@ -49,3 +49,6 @@ msgstr "Introduce una dirección de correo válida."
 
 msgid "Current password is incorrect."
 msgstr "La contraseña actual es incorrecta."
+
+msgid "Unsupported language."
+msgstr "Idioma no soportado."

@@ -197,6 +197,28 @@ class User extends Model
     }
 
     /**
+     * $idAppacmanLang is the consuming app's own appacman_lang.id_appacman_lang
+     * (this package doesn't know or care what that maps to - see
+     * Api\Model\TheTvdb\Languages in tv-tracker-local for this project's own
+     * culture <-> id mapping)
+     */
+    public function updateLanguage(int $idAppacmanLang): void
+    {
+        $sql    = '
+            UPDATE user
+            SET id_appacman_lang = :id_appacman_lang
+            WHERE id_user = :id_user
+        ';
+        $params = array(
+            'id_appacman_lang' => array('value' => $idAppacmanLang, 'type' => PDO::PARAM_INT),
+            'id_user'          => array('value' => $this->id, 'type' => PDO::PARAM_INT),
+        );
+        $this->mysql->query($sql, $params);
+
+        $this->info['id_appacman_lang'] = $idAppacmanLang;
+    }
+
+    /**
      * re-encrypts and stores a new email for this already-loaded user (same
      * per-row TwoWay context as encryptAndStoreEmail(), already set up by
      * whichever loadWith*() call loaded $this in the first place), or
