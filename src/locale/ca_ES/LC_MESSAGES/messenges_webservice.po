@@ -43,3 +43,9 @@ msgstr "Caduca en 15 minuts."
 
 msgid "Invalid or expired code."
 msgstr "Codi invàlid o caducat."
+
+msgid "Enter a valid email address."
+msgstr "Introdueix una adreça de correu vàlida."
+
+msgid "Current password is incorrect."
+msgstr "La contrasenya actual és incorrecta."

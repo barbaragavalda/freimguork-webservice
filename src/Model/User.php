@@ -156,6 +156,78 @@ class User extends Model
         return OneWay::check($this->info['password'], $password, self::PASSWORD_CONTEXT);
     }
 
+    /**
+     * checks $password against this already-loaded user's own stored hash -
+     * unlike authenticate(), doesn't load by email first (the caller already
+     * has $this->user from the request's token, see WebserviceController::
+     * checkToken()), used to confirm the current password before changing it
+     */
+    public function verifyPassword(string $password): bool
+    {
+        return OneWay::check($this->info['password'], $password, self::PASSWORD_CONTEXT);
+    }
+
+    /**
+     * renames this already-loaded user, or returns false if $username is
+     * already taken by a different account (uniqueness itself is still
+     * enforced by the `username` column's UNIQUE KEY - this check just gives
+     * the caller a clean false instead of a caught constraint-violation
+     * exception)
+     */
+    public function updateUsername(string $username): bool
+    {
+        $existing = new self();
+        if ($existing->loadWithUsername($username) && $existing->id !== $this->id) {
+            return false;
+        }
+
+        $sql    = '
+            UPDATE user
+            SET username = :username
+            WHERE id_user = :id_user
+        ';
+        $params = array(
+            'username' => array('value' => $username, 'type' => PDO::PARAM_STR),
+            'id_user'  => array('value' => $this->id, 'type' => PDO::PARAM_INT),
+        );
+        $this->mysql->query($sql, $params);
+
+        $this->info['username'] = $username;
+        return true;
+    }
+
+    /**
+     * re-encrypts and stores a new email for this already-loaded user (same
+     * per-row TwoWay context as encryptAndStoreEmail(), already set up by
+     * whichever loadWith*() call loaded $this in the first place), or
+     * returns false if $email is already taken by a different account
+     */
+    public function updateEmail(string $email): bool
+    {
+        $existing = new self();
+        if ($existing->loadWithEmail($email) && $existing->id !== $this->id) {
+            return false;
+        }
+
+        $sql    = '
+            UPDATE user
+            SET email = :email, email_bidx = :email_bidx
+            WHERE id_user = :id_user
+        ';
+        $params = array(
+            'email'      => array(
+                'value' => TwoWay::encrypt($email, $this->key . self::EMAIL_FIELD),
+                'type'  => PDO::PARAM_STR,
+            ),
+            'email_bidx' => array('value' => BlindIndex::compute($email, self::EMAIL_FIELD), 'type' => PDO::PARAM_STR),
+            'id_user'    => array('value' => $this->id, 'type' => PDO::PARAM_INT),
+        );
+        $this->mysql->query($sql, $params);
+
+        $this->info['email'] = $email;
+        return true;
+    }
+
     public function loadWithID(int $id): bool|int
     {
         $sql    = '
