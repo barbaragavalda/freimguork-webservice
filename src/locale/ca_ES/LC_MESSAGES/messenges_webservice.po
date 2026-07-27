@@ -52,3 +52,6 @@ msgstr "La contrasenya actual és incorrecta."
 
 msgid "Unsupported language."
 msgstr "Idioma no admès."
+
+msgid "Password must be at least %d characters long."
+msgstr "La contrasenya ha de tenir com a mínim %d caràcters."

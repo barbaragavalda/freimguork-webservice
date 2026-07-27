@@ -30,6 +30,15 @@ class User extends Model
      */
     public const string USERNAME_PATTERN = '/^[a-zA-Z0-9_.]{3,20}$/';
 
+    /**
+     * shared by Controller\{Register,ChangePassword,ResetPassword} - length
+     * only, no composition rules (must-have-a-number/uppercase/symbol):
+     * modern guidance (NIST SP 800-63B) treats those as adding friction
+     * without meaningfully improving security, since they mostly just push
+     * people toward predictable substitutions
+     */
+    public const int PASSWORD_MIN_LENGTH = 8;
+
     protected array $info = array();
 
     public function getInfo(): array

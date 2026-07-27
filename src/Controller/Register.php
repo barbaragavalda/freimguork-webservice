@@ -39,6 +39,13 @@ class Register extends WebserviceController
             );
             return;
         }
+        if (strlen($password) < User::PASSWORD_MIN_LENGTH) {
+            $this->error = sprintf(
+                $this->translate('Password must be at least %d characters long.'),
+                User::PASSWORD_MIN_LENGTH
+            );
+            return;
+        }
 
         $user = new User();
         // checked separately (rather than just relying on register()'s own

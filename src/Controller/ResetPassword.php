@@ -26,6 +26,13 @@ class ResetPassword extends WebserviceController
             $this->error = $this->translate('All fields are required.');
             return;
         }
+        if (strlen($newPassword) < User::PASSWORD_MIN_LENGTH) {
+            $this->error = sprintf(
+                $this->translate('Password must be at least %d characters long.'),
+                User::PASSWORD_MIN_LENGTH
+            );
+            return;
+        }
 
         $user = new User();
         if (!$user->loadWithEmail($email) || !(new PasswordReset())->redeem($user->getID(), $code)) {

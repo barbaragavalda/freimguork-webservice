@@ -52,3 +52,6 @@ msgstr "La contraseña actual es incorrecta."
 
 msgid "Unsupported language."
 msgstr "Idioma no soportado."
+
+msgid "Password must be at least %d characters long."
+msgstr "La contraseña debe tener como mínimo %d caracteres."
