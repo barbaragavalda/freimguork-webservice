@@ -185,7 +185,10 @@ class User extends Model
      */
     public function updateUsername(string $username): bool
     {
-        $existing = new self();
+        // shares $this->mysql rather than a bare `new self()` - not just
+        // style, an injected test fixture (FixturePdo) would otherwise be
+        // silently bypassed in favor of Model's own default connection
+        $existing = new self($this->mysql);
         if ($existing->loadWithUsername($username) && $existing->id !== $this->id) {
             return false;
         }
@@ -235,7 +238,8 @@ class User extends Model
      */
     public function updateEmail(string $email): bool
     {
-        $existing = new self();
+        // see updateUsername()'s own comment on sharing $this->mysql here
+        $existing = new self($this->mysql);
         if ($existing->loadWithEmail($email) && $existing->id !== $this->id) {
             return false;
         }

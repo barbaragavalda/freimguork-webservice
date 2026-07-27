@@ -246,4 +246,136 @@ class UserTest extends TestCase
         $this->assertStringStartsWith('$', $storedPassword);
     }
 
+    public function testVerifyPasswordAcceptsTheCorrectPasswordAndRejectsAWrongOne(): void
+    {
+        // same technique as testAuthenticateAcceptsTheCorrectPasswordAndRejectsAWrongOne:
+        // register through a throwaway instance to get a realistically-hashed
+        // password, then feed it back as an already-loaded row
+        $created       = '2026-01-01 00:00:00';
+        $insertedRow   = array('id_user' => 9, 'email' => '', 'password' => 'irrelevant', 'username' => 'realuser', 'created' => $created);
+        $registerMysql = new FixturePdo(array(array(), array(), array(), array($insertedRow), array()));
+        (new User($registerMysql))->register('real@example.com', 'correct horse', 'realuser');
+        $hashedPassword = $registerMysql->queries[2]['params']['password']['value'];
+
+        $row  = array('id_user' => 9, 'password' => $hashedPassword, 'username' => 'realuser');
+        $user = new User(new FixturePdo(array(array($row))));
+        $user->loadWithID(9);
+
+        $this->assertTrue($user->verifyPassword('correct horse'));
+        $this->assertFalse($user->verifyPassword('wrong password'));
+    }
+
+    public function testUpdateUsernameReturnsFalseWhenTakenByAnotherUser(): void
+    {
+        // 1st query: loadWithID() for the acting user, 2nd: updateUsername()'s
+        // own conflict check (finds a *different* user already using it)
+        $rows  = array(
+            array(array('id_user' => 5, 'username' => 'me', 'password' => 'hash')),
+            array(array('id_user' => 99, 'username' => 'taken', 'password' => 'hash')),
+        );
+        $mysql = new FixturePdo($rows);
+        $user  = new User($mysql);
+        $user->loadWithID(5);
+
+        $result = $user->updateUsername('taken');
+
+        $this->assertFalse($result);
+        // only the two loads happened - no UPDATE was attempted
+        $this->assertCount(2, $mysql->queries);
+    }
+
+    public function testUpdateUsernameAllowsKeepingYourOwnCurrentUsername(): void
+    {
+        // the conflict check finds a row, but it's this same user's own -
+        // updateUsername() must not treat that as a real conflict
+        $rows  = array(
+            array(array('id_user' => 5, 'username' => 'me', 'password' => 'hash')),
+            array(array('id_user' => 5, 'username' => 'me', 'password' => 'hash')),
+            array(),
+        );
+        $mysql = new FixturePdo($rows);
+        $user  = new User($mysql);
+        $user->loadWithID(5);
+
+        $result = $user->updateUsername('me');
+
+        $this->assertTrue($result);
+        $this->assertStringContainsString('UPDATE user', $mysql->queries[2]['sql']);
+    }
+
+    public function testUpdateUsernameUpdatesWhenNotTaken(): void
+    {
+        $rows  = array(
+            array(array('id_user' => 5, 'username' => 'me', 'password' => 'hash')),
+            array(),
+            array(),
+        );
+        $mysql = new FixturePdo($rows);
+        $user  = new User($mysql);
+        $user->loadWithID(5);
+
+        $result = $user->updateUsername('newname');
+
+        $this->assertTrue($result);
+        $this->assertSame('newname', $mysql->queries[2]['params']['username']['value']);
+        $this->assertSame(5, $mysql->queries[2]['params']['id_user']['value']);
+        $this->assertSame('newname', $user->getInfo()['username']);
+    }
+
+    public function testUpdateLanguageStoresTheGivenID(): void
+    {
+        $row   = array('id_user' => 5, 'username' => 'me', 'password' => 'hash');
+        $mysql = new FixturePdo(array(array($row)));
+        $user  = new User($mysql);
+        $user->loadWithID(5);
+
+        $user->updateLanguage(2);
+
+        $this->assertStringContainsString('UPDATE user', $mysql->queries[1]['sql']);
+        $this->assertSame(2, $mysql->queries[1]['params']['id_appacman_lang']['value']);
+        $this->assertSame(5, $mysql->queries[1]['params']['id_user']['value']);
+        $this->assertSame(2, $user->getInfo()['id_appacman_lang']);
+    }
+
+    public function testUpdateEmailReturnsFalseWhenTakenByAnotherUser(): void
+    {
+        $created = '2026-01-01 00:00:00';
+        $rows    = array(
+            array(array('id_user' => 5, 'email' => 'placeholder', 'created' => $created, 'username' => 'me', 'password' => 'hash')),
+            array(array('id_user' => 99, 'email' => 'placeholder', 'created' => $created, 'username' => 'other', 'password' => 'hash')),
+        );
+        $mysql   = new FixturePdo($rows);
+        $user    = new User($mysql);
+        $user->loadWithID(5);
+
+        $result = $user->updateEmail('taken@example.com');
+
+        $this->assertFalse($result);
+        $this->assertCount(2, $mysql->queries);
+    }
+
+    public function testUpdateEmailReEncryptsAndStoresANewEmail(): void
+    {
+        // 'created' must be non-empty for load() to populate $this->key
+        // (see User::load()) - updateEmail() relies on that key already
+        // being set rather than deriving it itself
+        $created = '2026-01-01 00:00:00';
+        $rows    = array(
+            array(array('id_user' => 5, 'email' => 'placeholder', 'created' => $created, 'username' => 'me', 'password' => 'hash')),
+            array(),
+            array(),
+        );
+        $mysql   = new FixturePdo($rows);
+        $user    = new User($mysql);
+        $user->loadWithID(5);
+
+        $result = $user->updateEmail('new@example.com');
+
+        $this->assertTrue($result);
+        $storedEmail = $mysql->queries[2]['params']['email']['value'];
+        $this->assertNotSame('new@example.com', $storedEmail);
+        $this->assertStringStartsWith('$gcm256$', $storedEmail);
+        $this->assertSame('new@example.com', $user->getInfo()['email']);
+    }
+
 }
