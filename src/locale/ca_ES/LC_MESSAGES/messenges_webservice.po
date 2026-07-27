@@ -55,3 +55,21 @@ msgstr "Idioma no admès."
 
 msgid "Password must be at least %d characters long."
 msgstr "La contrasenya ha de tenir com a mínim %d caràcters."
+
+msgid "Confirm your new email address"
+msgstr "Confirma la teva nova adreça de correu"
+
+msgid "Your confirmation code is:"
+msgstr "El teu codi de confirmació és:"
+
+msgid "Code is required."
+msgstr "Cal el codi."
+
+msgid "Your account's email is being changed"
+msgstr "S'està canviant l'email del teu compte"
+
+msgid "A request was made to change this account's email to:"
+msgstr "S'ha sol·licitat canviar l'email d'aquest compte a:"
+
+msgid "If this wasn't you, change your password immediately."
+msgstr "Si no has estat tu, canvia la contrasenya immediatament."

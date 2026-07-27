@@ -55,3 +55,21 @@ msgstr "Idioma no soportado."
 
 msgid "Password must be at least %d characters long."
 msgstr "La contraseña debe tener como mínimo %d caracteres."
+
+msgid "Confirm your new email address"
+msgstr "Confirma tu nueva dirección de correo"
+
+msgid "Your confirmation code is:"
+msgstr "Tu código de confirmación es:"
+
+msgid "Code is required."
+msgstr "El código es obligatorio."
+
+msgid "Your account's email is being changed"
+msgstr "Se está cambiando el email de tu cuenta"
+
+msgid "A request was made to change this account's email to:"
+msgstr "Se ha solicitado cambiar el email de esta cuenta a:"
+
+msgid "If this wasn't you, change your password immediately."
+msgstr "Si no has sido tú, cambia la contraseña inmediatamente."
