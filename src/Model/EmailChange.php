@@ -105,7 +105,12 @@ class EmailChange extends Model
         $this->mysql->query($sql, $params);
     }
 
-    private function deleteForUser(int $idUser): void
+    /**
+     * public rather than the private-helper-only shape PasswordReset uses -
+     * also called directly by a consuming app's own account-deletion flow
+     * to clear any pending request, not just internally by create()/redeem()
+     */
+    public function deleteForUser(int $idUser): void
     {
         $sql    = '
             DELETE FROM email_change
