@@ -34,7 +34,7 @@ class PasswordReset extends Model
         $this->deleteForUser($idUser);
 
         $sql    = '
-            INSERT INTO password_reset (id_user, code, expires_at)
+            INSERT INTO user_password_reset (id_user, code, expires_at)
             VALUES (:id_user, :code, :expires_at)
         ';
         $params = array(
@@ -75,7 +75,7 @@ class PasswordReset extends Model
     {
         $sql    = '
             SELECT *
-            FROM password_reset
+            FROM user_password_reset
             WHERE id_user = :id_user
         ';
         $params = array(
@@ -88,7 +88,7 @@ class PasswordReset extends Model
     private function incrementAttempts(int $idUser): void
     {
         $sql    = '
-            UPDATE password_reset
+            UPDATE user_password_reset
             SET attempts = attempts + 1
             WHERE id_user = :id_user
         ';
@@ -101,7 +101,7 @@ class PasswordReset extends Model
     private function deleteForUser(int $idUser): void
     {
         $sql    = '
-            DELETE FROM password_reset
+            DELETE FROM user_password_reset
             WHERE id_user = :id_user
         ';
         $params = array(

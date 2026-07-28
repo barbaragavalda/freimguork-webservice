@@ -27,8 +27,8 @@ class PasswordResetTest extends TestCase
         $passwordReset->create(1);
 
         $this->assertCount(2, $mysql->queries);
-        $this->assertStringContainsString('DELETE FROM password_reset', $mysql->queries[0]['sql']);
-        $this->assertStringContainsString('INSERT INTO password_reset', $mysql->queries[1]['sql']);
+        $this->assertStringContainsString('DELETE FROM user_password_reset', $mysql->queries[0]['sql']);
+        $this->assertStringContainsString('INSERT INTO user_password_reset', $mysql->queries[1]['sql']);
         $this->assertSame(1, $mysql->queries[1]['params']['id_user']['value']);
     }
 
@@ -92,7 +92,7 @@ class PasswordResetTest extends TestCase
 
         $this->assertFalse($result);
         $this->assertCount(2, $mysql->queries);
-        $this->assertStringContainsString('UPDATE password_reset', $mysql->queries[1]['sql']);
+        $this->assertStringContainsString('UPDATE user_password_reset', $mysql->queries[1]['sql']);
         $this->assertStringContainsString('attempts = attempts + 1', $mysql->queries[1]['sql']);
     }
 
@@ -111,7 +111,7 @@ class PasswordResetTest extends TestCase
 
         $this->assertTrue($result);
         $this->assertCount(2, $mysql->queries);
-        $this->assertStringContainsString('DELETE FROM password_reset', $mysql->queries[1]['sql']);
+        $this->assertStringContainsString('DELETE FROM user_password_reset', $mysql->queries[1]['sql']);
     }
 
 }
