@@ -1,0 +1,11 @@
+image: alpine/git:2.43.0
+
+pipelines:
+  branches:
+    master:
+      - step:
+          name: Mirror master to GitHub
+          clone:
+            depth: full
+          script:
+            - git push "https://x-access-token:${GITHUB_TOKEN}@github.com/barbaragavalda/freimguork-webservice.git" master --tags
