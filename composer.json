@@ -25,7 +25,7 @@
     "php": "^8.5",
     "ext-gettext": "*",
     "ext-pdo": "*",
-    "optisistem/freimguork-core": "dev-master"
+    "optisistem/freimguork-core": "dev-master || ^2.0"
   },
   "require-dev": {
     "phpunit/phpunit": "^11.0"
