@@ -9,3 +9,8 @@ pipelines:
             depth: full
           script:
             - git push "https://x-access-token:${GITHUB_TOKEN}@github.com/barbaragavalda/freimguork-webservice.git" master --tags
+      - step:
+          name: Check sibling package constraints
+          image: php:8.5-cli
+          script:
+            - php bin/check-sibling-constraints.php

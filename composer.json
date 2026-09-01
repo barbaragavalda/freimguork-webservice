@@ -41,7 +41,8 @@
     }
   },
   "scripts": {
-    "test": "phpunit"
+    "test": "phpunit",
+    "check-constraints": "php bin/check-sibling-constraints.php"
   },
   "minimum-stability": "dev"
 }
