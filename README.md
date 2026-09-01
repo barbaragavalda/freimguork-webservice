@@ -43,3 +43,12 @@ docker exec php sh -c "cd /var/www/html/freimguork-webservice && composer test"
 
 PHPUnit covers the four Models (`User`, `UserToken`, `EmailChange`, `PasswordReset`). No PHPStan
 configured yet, unlike `freimguork-core`/`freimguork-appacman`.
+
+## Versioning
+
+Follows the same `v1.0`/`dev-master` split as `freimguork-core`: `v1.0` is the last
+pre-modernization snapshot, still used by consuming apps that haven't migrated their controller
+constructors yet. This package itself already tracks core's `dev-master`, since its own controllers
+(`WebserviceController`, `WebController`, and their subclasses) are already migrated to the new
+required-dependency constructor shape. `v2.0` is a checkpoint tag matching `freimguork-core`'s own
+`v2.0` milestone, not a new pinning point.
