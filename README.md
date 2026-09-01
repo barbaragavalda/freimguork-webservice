@@ -20,9 +20,6 @@ Sibling packages in this family: `freimguork-core` (shared framework), `freimguo
 composer require optisistem/freimguork-webservice
 ```
 
-This is a private Bitbucket package - see `freimguork-core`'s README for the Atlassian API token
-authentication Composer needs.
-
 ## What's here
 
 - `Controller/` - the API endpoints (see [API.md](API.md))
